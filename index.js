@@ -1,6 +1,8 @@
+require('dotenv').config();
 const express = require('express');
 const db = require('./db');
 const PORT = 8000;
+
 
 // Middleware
 
@@ -20,7 +22,7 @@ const startServer = async (app,port) => {
         console.log(`Server is running on port ${PORT}`);
       });
     return app;
-}
+};
 const configureApp = (port) => {
     const app = express();
     setupMiddleWare(app)
