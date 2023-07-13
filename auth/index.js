@@ -1,5 +1,7 @@
 const router = require("express").Router();
-// router.use('/register', require("../auth/register"));
+
+//route is not /auth
+router.use('/register', require("../auth/register"));
 
 router.use((req, res, next) => {
     const error = new Error("404 Not Found");

@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const admin = require('firebase-admin');
 
-
+//route is not /auth/register
 const keyData = require('../apikeys/ttp-capstone-social-media-firebase-adminsdk-ax3sl-a0111d5003.json');
 admin.initializeApp({
     credential: admin.credential.cert(keyData)
