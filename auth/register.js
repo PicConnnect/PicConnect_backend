@@ -10,20 +10,26 @@ admin.initializeApp({
 
 router.post('/', (req, res) => {
     console.log("here in register");
-    const {email, password} = req.body;
-    
-    admin.auth().createUser({
-        email,
-        password
-    })
-    .then((userRecord) => {
-        res.status(200).json({message: "User registered", uid: userRecord.uid});
-    })
-    .catch((error) => {
-        console.error(error);
-        res.status(500).json({error: "failed to register user"});
-    });
-    
+    const { email, password } = req.body;
+    admin.auth().getUserByEmail(email)
+        .then(() => {
+            //when found send out error message
+            res.status(409).json({ error: 'Email already registered' });
+        })
+        .catch(() => {
+            //when the email does not exists allow create user
+            admin.auth().createUser({
+                email,
+                password
+            })
+                .then((userRecord) => {
+                    res.status(200).json({ message: "User registered", uid: userRecord.uid });
+                })
+                .catch((error) => {
+                    console.error(error);
+                    res.status(500).json({ error: "failed to register user" });
+                });
+        });
 });
 module.exports = router;
 // const PORT = 8000;
