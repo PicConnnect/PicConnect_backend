@@ -1,4 +1,5 @@
 const express = require('express');
+const db = require('./db');
 const PORT = 8000;
 
 // Middleware
@@ -13,10 +14,12 @@ const setupRoutes = (app) => {
     app.use("/auth", require("./auth"))
 };
 
-const startServer = (app,port) => {
+const startServer = async (app,port) => {
+    await db.sync();
     app.listen(port, () => {
         console.log(`Server is running on port ${PORT}`);
       });
+    return app;
 }
 const configureApp = (port) => {
     const app = express();
