@@ -27,4 +27,4 @@ const Photo = db.define("photo", {
     */
 });
 
-module.exports = Photo
+module.exports = Photo;
