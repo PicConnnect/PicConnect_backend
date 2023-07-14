@@ -10,10 +10,10 @@ const User = require("./user");
 User.hasMany(Photo);
 Photo.belongsTo(User);
 
-//User many -> many User
+//User many -> many User through following
 //user.belongstoMany(user, {through: "following"})
-User.belongsToMany(User, {as: "follower_id", through: "Following"});
-User.belongsToMany(User, {as: "following_id", through: "Following"});
+User.belongsToMany(User, {as: "follower_id", through: "following", foreignKey: 'userId', otherKey: 'followerId'});
+User.belongsToMany(User, {as: "following_id", through: "following", foreignKey: 'followerId', otherKey: 'userId'});
 /*
 User.belongsToMany(User, {as: "followers", through: "Following", foreignKey: 'followingId'});
 User.belongsToMany(User, {as: "following", through: "Following", foreignKey: 'followerId'});
@@ -31,6 +31,10 @@ Comment.belongsTo(User);
 Comment.hasMany(Reply);
 Reply.belongsTo(Comment);
 
+//User 1 -> many Reply
+User.hasMany(Reply);
+Reply.belongsTo(User);
+
 //Location 1 -> many photo
 Location.hasMany(Photo);
 Photo.belongsTo(Location);
@@ -39,8 +43,8 @@ Photo.belongsTo(Location);
 Camera_Details.hasMany(Photo);
 Photo.belongsTo(Camera_Details);
 
-Photo.belongsToMany(Tag, {through: "Tag_Photo"});
-Tag.belongsToMany(Photo, {through: "Tag_Photo"});
+Photo.belongsToMany(Tag, {through: "tag_photo"});
+Tag.belongsToMany(Photo, {through: "tag_photo"});
 
 module.exports = {
     Photo,

@@ -1,7 +1,7 @@
 const {DataTypes} = require("sequelize");
 const db = require("../db");
 
-const Camera_Details = db.define("CameraDetails",{
+const Camera_Details = db.define("camera_details",{
     make: {
         type: DataTypes.STRING,
         allowNull: false
@@ -10,7 +10,7 @@ const Camera_Details = db.define("CameraDetails",{
         type: DataTypes.STRING,
         allowNull: false
     },
-    exosure_time:{
+    exposure_time:{
         type: DataTypes.FLOAT,
         allowNull: false
     },
