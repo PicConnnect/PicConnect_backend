@@ -1,3 +1,4 @@
+require('dotenv').config();
 const db = require("./db");
 const {User, Tag, Reply, Photo, Location, Comment, Camera_Details} = require("./db/models");
 

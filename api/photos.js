@@ -1,6 +1,6 @@
 const express = require ("express");
 const router = express.Router();
-const { Photo }  = require("../db/models");
+const { Photo, Tag }  = require("../db/models");
 //const { Sequelize } = require("sequelize");
 
 //getting all photos
@@ -94,6 +94,5 @@ router.delete("/:id", async (req, res, next) => {
     } catch (error) {
         next (error);
     } 
-});
-
+})
 module.exports = router;
