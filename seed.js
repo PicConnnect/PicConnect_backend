@@ -61,7 +61,8 @@ const PhotoSeed = [
         "urls": "https://example.com/image1234_small.jpg",
         "userUserID": "firebase_user_id_1",
         "locationId": 1,
-        "cameraDetailId": 1
+        "cameraDetailId": 1,
+        "tagId": 1
     },
     {
         "title": "Mountain Landscape",
@@ -157,6 +158,19 @@ const seed = async() => {
     await Photo.bulkCreate(PhotoSeed);
     await Comment.bulkCreate(CommentSeed);
     await Reply.bulkCreate(ReplySeed);
+    //testing out tag and photo connection
+    try {
+        const photo = await Photo.findByPk(1);
+        const tagIds = [1,2];
+        const tags = await Tag.findAll({
+            where: {
+                id: tagIds,
+            }
+        });
+        await photo.addTags(tags);
+    } catch (error) {
+        console.error("it is an error")
+    }
 }
 
 seed().then(() => process.exit());

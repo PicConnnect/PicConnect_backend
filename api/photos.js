@@ -94,5 +94,20 @@ router.delete("/:id", async (req, res, next) => {
     } catch (error) {
         next (error);
     } 
-})
+});
+
+router.get("/tag/:tagId", async (req, res, next) => {
+    const tagId = req.params.tagId;
+    console.log(tagId)
+    try {
+        const tagPhotos = await Tag.findByPk(tagId, {
+            include: {all: true, nested: true},
+        });
+        tagPhotos
+            ? res.status(200).json(tagPhotos)
+            : res.status(400).send("Photos not found");
+    } catch (error) {
+        next (error);
+    }
+});
 module.exports = router;
