@@ -171,6 +171,21 @@ const seed = async() => {
     } catch (error) {
         console.error("it is an error")
     }
+
+    try {
+        const user = await User.findByPk("firebase_user_id_1");
+        const followerIds = ["firebase_user_id_2","firebase_user_id_3"];
+        const followers = await User.findAll({
+            where: {
+                userID: followerIds,
+            }
+        });
+        // const follower = await User.findByPk("firebase_user_id_2");
+        // console.log(follower);
+        await user.addFollower_id(followers);
+    } catch (error) {
+        console.error("it is an error");
+    }
 }
 
 seed().then(() => process.exit());
