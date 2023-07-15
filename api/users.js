@@ -17,6 +17,21 @@ router.get("/:userID", async (req, res, next) => {
     }
 });
 
+router.post("/:userID/addFollower/:followerID", async (req, res, next) => {
+    
+    const { userID, followerID } = req.params;
+    console.log(userID, followerID);
+    try {
+        const user = await User.findByPk(userID);
+        const follower = await User.findByPk(followerID);
+        const followed = await user.addFollower_id(follower);
+        followed
+            ? res.status(200).json(followed)
+            : res.status(404).send("Followed Unsuccessful")
+    } catch (error) {
+        next(error);
+    }
+});
 
 
 module.exports = router;
