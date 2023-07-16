@@ -17,6 +17,37 @@ router.get("/:userID", async (req, res, next) => {
     }
 });
 
+router.put("/:userID", async (req, res, next) => {
+    const userID = req.params.userID;
+    const updateUser = req.body;
+    try {
+        const updatedUser = await User.update(updateUser, {
+            where:{userID: userID}, 
+        });
+        updatedUser
+            ? res.status(200).json(updatedUser)
+            : res.status(400).send("user not found");
+    } catch (error) {
+        next(error);
+    }
+});
+
+router.delete("/:userID", async (req, res, next) => {
+    const userID = req.params.userID;
+    try {
+        const deletedUser = await User.destroy({
+            where: { userId: userID },
+        });
+
+        deletedUser
+            ? res.status(200).send("Delete User")
+            : res.status(400).send("user not found");
+    } catch (error) {
+        next (error);
+    }
+});
+
+
 router.post("/:userID/addFollower/:followerID", async (req, res, next) => {
     
     const { userID, followerID } = req.params;
