@@ -2,6 +2,7 @@ const express = require ("express");
 const router = express.Router();
 const { User } = require("../db/models");
 
+// handling single user get request
 router.get("/:userID", async (req, res, next) => {
     const userID = req.params.userID;
     try {
@@ -17,6 +18,7 @@ router.get("/:userID", async (req, res, next) => {
     }
 });
 
+// handling edit user put request
 router.put("/:userID", async (req, res, next) => {
     const userID = req.params.userID;
     const updateUser = req.body;
@@ -32,6 +34,7 @@ router.put("/:userID", async (req, res, next) => {
     }
 });
 
+// handling delete user delete request
 router.delete("/:userID", async (req, res, next) => {
     const userID = req.params.userID;
     try {
@@ -47,7 +50,7 @@ router.delete("/:userID", async (req, res, next) => {
     }
 });
 
-
+//handling add follower to the user post request
 router.post("/:userID/addFollower/:followerID", async (req, res, next) => {
     
     const { userID, followerID } = req.params;
@@ -64,6 +67,7 @@ router.post("/:userID/addFollower/:followerID", async (req, res, next) => {
     }
 });
 
+//handling remove follower from user delete request
 router.delete("/:userID/deleteFollower/:followerID", async (req, res, next) => {
     const { userID, followerID } = req.params;
     try{
