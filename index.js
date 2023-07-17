@@ -1,5 +1,6 @@
 require('dotenv').config();
 const express = require('express');
+const cors = require('cors');
 const db = require('./db');
 const PORT = 8000;
 
@@ -7,6 +8,7 @@ const PORT = 8000;
 // Middleware
 
 const setupMiddleWare = (app) => {
+    app.use(cors());
     app.use(express.json());
     app.use(express.urlencoded({ extended: false }));
 }
