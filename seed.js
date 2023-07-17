@@ -58,7 +58,7 @@ const PhotoSeed = [
         "title": "Beautiful Sunset",
         "description": "A stunning sunset over the ocean.",
         "downloads": 1234,
-        "urls": "https://example.com/image1234_small.jpg",
+        "urls": "https://i.ibb.co/42mG7Xm/jovan-vasiljevic-sn7a-S4-DD9-Ro-unsplash.jpg",
         "userUserID": "firebase_user_id_1",
         "locationId": 1,
         "cameraDetailId": 1,
@@ -68,7 +68,7 @@ const PhotoSeed = [
         "title": "Mountain Landscape",
         "description": "A majestic view of mountains and valleys.",
         "downloads": 5678,
-        "urls": "https://example.com/image5678_small.jpg",
+        "urls": "https://i.ibb.co/p1d1Qs1/yevhenii-dubrovskyi-OPuszyb1-Yvo-unsplash.jpg",
         "userUserID": "firebase_user_id_2",
         "locationId": 2,
         "cameraDetailId": 2
@@ -77,7 +77,7 @@ const PhotoSeed = [
         "title": "Lake View",
         "description": "A majestic view of mountains and valleys.",
         "downloads": 5678,
-        "urls": "https://example.com/image5678_small.jpg",
+        "urls": "https://i.ibb.co/mDsg2jy/neom-I5j46lq-Ao-o-unsplash.jpg",
         "userUserID": "firebase_user_id_3",
         "locationId": 3,
         "cameraDetailId": 3

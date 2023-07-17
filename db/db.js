@@ -1,4 +1,4 @@
-//import 'dotenv/config'
+require('dotenv').config();
 const { Sequelize } = require("sequelize");
 const { name } = require("../package.json");
 
