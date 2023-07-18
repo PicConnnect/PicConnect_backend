@@ -3,6 +3,7 @@ const router = express.Router();
 const { Photo, Tag }  = require("../db/models");
 //const { Sequelize } = require("sequelize");
 
+//Root here is localhost:8000/api/photos
 //getting all photos
 router.get("/", async (req, res, next) => {
     try {
@@ -53,7 +54,7 @@ router.get("/user/:userId", async (req,res, next) => {
     } catch (error) {
         next(error);
     }
-});
+}); 
 //add photo
 router.post("/addPhoto", async(req, res, next) => {
     try {
