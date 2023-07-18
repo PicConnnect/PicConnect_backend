@@ -4,7 +4,6 @@ const cors = require('cors');
 const db = require('./db');
 const PORT = 8000;
 
-
 // Middleware
 
 const setupMiddleWare = (app) => {
@@ -12,10 +11,10 @@ const setupMiddleWare = (app) => {
     app.use(express.json());
     app.use(express.urlencoded({ extended: false }));
 }
-//Routes
+
+//Routes: mount on api and auth 
 const setupRoutes = (app) => {
     app.use("/api", require("./api"));
-    app.use("/auth", require("./auth"))
 };
 
 const startServer = async (app,port) => {
