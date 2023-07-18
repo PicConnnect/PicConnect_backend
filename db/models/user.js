@@ -12,11 +12,18 @@ const User = db.define("user", {
     },
     about: {
         type: DataTypes.STRING,
-        allowNull: false,
+        allowNull: true,
     },
     rating: {
         type: DataTypes.INTEGER,
+        allowNull: true,
+    },
+    email: {
+        type: DataTypes.STRING,
         allowNull: false,
+        validate: {
+            isEmail: true,
+        }
     }
 });
 
