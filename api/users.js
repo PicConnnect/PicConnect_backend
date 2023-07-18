@@ -2,6 +2,7 @@ const express = require ("express");
 const router = express.Router();
 const { User } = require("../db/models");
 
+//ROOT HERE IS localhost:8000/api/users/
 // handling single user get request
 router.get("/:userID", async (req, res, next) => {
     const userID = req.params.userID;

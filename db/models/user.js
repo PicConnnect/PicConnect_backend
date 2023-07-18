@@ -8,15 +8,22 @@ const User = db.define("user", {
     }, 
     name: {
         type: DataTypes.STRING,
-        allowNull: false
+        allowNull: true,
     },
     about: {
         type: DataTypes.STRING,
-        allowNull: false,
+        allowNull: true,
     },
     rating: {
         type: DataTypes.INTEGER,
+        allowNull: true,
+    },
+    email: {
+        type: DataTypes.STRING,
         allowNull: false,
+        validate: {
+            isEmail: true,
+        }
     }
 });
 
