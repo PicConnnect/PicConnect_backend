@@ -43,7 +43,7 @@ router.get("/user/:userId", async (req,res, next) => {
     try{
         const userPhotos = await Photo.findAll({
             where: {
-                userUserID: userId
+                userID: userId
             },
             include: {all: true, nested: true}, 
         })
@@ -58,6 +58,7 @@ router.get("/user/:userId", async (req,res, next) => {
 //add photo
 router.post("/addPhoto", async(req, res, next) => {
     try {
+        console.log(req.body);
         const createPhoto = await Photo.create(req.body);
         createPhoto
             ? res.status(200).json(createPhoto)
