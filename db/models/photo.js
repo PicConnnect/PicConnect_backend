@@ -17,6 +17,10 @@ const Photo = db.define("photo", {
     urls: {
         type: DataTypes.STRING,
         allowNull: false
+    },
+    userID: {
+        type: DataTypes.STRING,
+        allowNull: false,
     }
     /*
     likes from like
