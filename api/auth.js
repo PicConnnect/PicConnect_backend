@@ -29,11 +29,11 @@ router.post('/register', async (req, res) => {
       const email = decodedToken.email;
   
       // Check if the user already exists in db
-      let user = await User.findOne({ where: { userID: uid } });
+      let user = await User.findOne({ where: { id: uid } });
       if (!user) {
         // If the user doesn't exist, create a new record
         user = await User.create({
-          userID: uid,
+          id: uid,
           email: email,
         });
       }

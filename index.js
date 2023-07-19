@@ -12,6 +12,7 @@ const setupMiddleWare = (app) => {
     app.use(express.urlencoded({ extended: false }));
 }
 
+
 //Routes: mount on api and auth 
 const setupRoutes = (app) => {
     app.use("/api", require("./api"));

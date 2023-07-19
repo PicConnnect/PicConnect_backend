@@ -4,11 +4,11 @@ const { User } = require("../db/models");
 
 //ROOT HERE IS localhost:8000/api/users/
 // handling single user get request
-router.get("/:userID", async (req, res, next) => {
-    const userID = req.params.userID;
+router.get("/:id", async (req, res, next) => {
+    const id = req.params.id;
     try {
-        console.log(userID)
-        const userInfo = await User.findByPk(userID, {
+        console.log(id)
+        const userInfo = await User.findByPk(id, {
             include: {all: true, nested: true},
         });
         userInfo
@@ -20,12 +20,12 @@ router.get("/:userID", async (req, res, next) => {
 });
 
 // handling edit user put request
-router.put("/:userID", async (req, res, next) => {
-    const userID = req.params.userID;
+router.put("/:id", async (req, res, next) => {
+    const id = req.params.id;
     const updateUser = req.body;
     try {
         const updatedUser = await User.update(updateUser, {
-            where:{userID: userID}, 
+            where:{id: id}, 
         });
         updatedUser
             ? res.status(200).json(updatedUser)
@@ -36,11 +36,11 @@ router.put("/:userID", async (req, res, next) => {
 });
 
 // handling delete user delete request
-router.delete("/:userID", async (req, res, next) => {
-    const userID = req.params.userID;
+router.delete("/:id", async (req, res, next) => {
+    const id = req.params.id;
     try {
         const deletedUser = await User.destroy({
-            where: { userId: userID },
+            where: { id: id },
         });
 
         deletedUser
@@ -52,12 +52,12 @@ router.delete("/:userID", async (req, res, next) => {
 });
 
 //handling add follower to the user post request
-router.post("/:userID/addFollower/:followerID", async (req, res, next) => {
+router.post("/:id/addFollower/:followerID", async (req, res, next) => {
     
-    const { userID, followerID } = req.params;
-    console.log(userID, followerID);
+    const { id, followerID } = req.params;
+    console.log(id, followerID);
     try {
-        const user = await User.findByPk(userID);
+        const user = await User.findByPk(id);
         const follower = await User.findByPk(followerID);
         const followed = await user.addFollower_id(follower);
         followed
@@ -69,10 +69,10 @@ router.post("/:userID/addFollower/:followerID", async (req, res, next) => {
 });
 
 //handling remove follower from user delete request
-router.delete("/:userID/deleteFollower/:followerID", async (req, res, next) => {
-    const { userID, followerID } = req.params;
+router.delete("/:id/deleteFollower/:followerID", async (req, res, next) => {
+    const { id, followerID } = req.params;
     try{
-        const user = await User.findByPk(userID);
+        const user = await User.findByPk(id);
         const follower = await User.findByPk(followerID);
         const isFollower = await user.hasFollower_id(follower);
 
