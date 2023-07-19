@@ -38,22 +38,14 @@ router.get("/:id", async(req, res, next) => {
     }
 });
 
-router.get("/user/:userId", async (req,res, next) => {
-    const userId = req.params.userId;
-    try{
-        const userPhotos = await Photo.findAll({
-            where: {
-                userID: userId
-            },
-            include: {all: true, nested: true}, 
-        })
-        userPhotos
-            ? res.status(200).json(userPhotos)
-            : res.status(404).send("User's photos not found")
-
-    } catch (error) {
+router.get("/user/:id", async (req,res, next) => {
+    const { id } = req.params;
+    try {
+        const photos = await Photo.findAll({ where: { userId: id } });
+        res.json(photos);
+      } catch (error) {
         next(error);
-    }
+      }
 }); 
 //add photo
 router.post("/addPhoto", async(req, res, next) => {

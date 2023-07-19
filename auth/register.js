@@ -17,18 +17,18 @@ router.post("/", (req, res) => {
     .auth()
     .verifyIdToken(token)
     .then((decodedToken) => {
-      const userID = decodedToken.uid;
+      const id = decodedToken.uid;
       const email = decodedToken.email;
       const name = decodedToken.name;
 
       //handle is user with same id exists in the db
-      User.findOne({ where: { userID } })
+      User.findOne({ where: { id } })
         .then((user) => {
           //in case, user already exists,
           if (user) {
             res.status(409).json({ error: "User already registered" });
           } else {
-            User.create({ userID, name, email })
+            User.create({ id, name, email })
               .then((user) => res.json(user))
               .catch((err) => {
                 console.error(err);
