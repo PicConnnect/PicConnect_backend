@@ -4,22 +4,25 @@ const {User, Tag, Reply, Photo, Location, Comment, Camera_Details} = require("./
 
 const UserSeed = [
     {
-        "userID": "firebase_user_id_1",
+        "id": "firebase_user_id_1",
         "name": "John Doe",
         "about": "I am a software engineer with a passion for web development.",
-        "rating": 4.8
+        "rating": 4.8,
+        "email": "firebase_user_id_1@gmail.com"
     },
     {
-        "userID": "firebase_user_id_2",
+        "id": "firebase_user_id_2",
         "name": "Jane Smith",
         "about": "Aspiring photographer exploring the beauty of nature.",
-        "rating": 4.2
+        "rating": 4.2,
+        "email": "firebase_user_id_2@gmail.com"
     },
     {
-        "userID": "firebase_user_id_3",
+        "id": "firebase_user_id_3",
         "name": "Alex Johnson",
         "about": "Music lover and guitar enthusiast. Rock 'n' roll forever!",
-        "rating": 4.9
+        "rating": 4.9,
+        "email": "firebase_user_id_3@gmail.com"
     }
 ];
 
@@ -39,17 +42,17 @@ const ReplySeed = [
     {
         "reply_text": "Thank you!",
         "commentId": 1,
-        "userUserID": "firebase_user_id_1"
+        "userId": "firebase_user_id_1"
     },
     {
         "reply_text": "Glad you liked it!",
         "commentId": 2,
-        "userUserID": "firebase_user_id_2"
+        "userId": "firebase_user_id_2"
     },
     {
         "reply_text": "I appreciate your feedback.",
         "commentId": 3,
-        "userUserID": "firebase_user_id_2"
+        "userId": "firebase_user_id_2"
     }
 ];
 
@@ -59,28 +62,28 @@ const PhotoSeed = [
         "description": "A stunning sunset over the ocean.",
         "downloads": 1234,
         "urls": "https://i.ibb.co/42mG7Xm/jovan-vasiljevic-sn7a-S4-DD9-Ro-unsplash.jpg",
-        "userUserID": "firebase_user_id_1",
+        "userId": "firebase_user_id_1",
         "locationId": 1,
         "cameraDetailId": 1,
-        "tagId": 1
+        "tagId": 1,
     },
     {
         "title": "Mountain Landscape",
         "description": "A majestic view of mountains and valleys.",
         "downloads": 5678,
         "urls": "https://i.ibb.co/p1d1Qs1/yevhenii-dubrovskyi-OPuszyb1-Yvo-unsplash.jpg",
-        "userUserID": "firebase_user_id_2",
+        "userId": "firebase_user_id_2",
         "locationId": 2,
-        "cameraDetailId": 2
+        "cameraDetailId": 2,
     },
     {
         "title": "Lake View",
         "description": "A majestic view of mountains and valleys.",
         "downloads": 5678,
         "urls": "https://i.ibb.co/mDsg2jy/neom-I5j46lq-Ao-o-unsplash.jpg",
-        "userUserID": "firebase_user_id_3",
+        "userId": "firebase_user_id_3",
         "locationId": 3,
-        "cameraDetailId": 3
+        "cameraDetailId": 3,
     }
 ];
 
@@ -108,17 +111,17 @@ const CommentSeed = [
     {
         "commentText": "Beautiful photo!",
         "photoId": "1",
-        "userUserID": "firebase_user_id_1"
+        "userId": "firebase_user_id_1"
     },
     {
         "commentText": "Great composition!",
         "photoId": "1",
-        "userUserID": "firebase_user_id_2"
+        "userId": "firebase_user_id_2"
     },
     {
         "commentText": "Love the colors in this photo.",
         "photoId": "2",
-        "userUserID": "firebase_user_id_3"
+        "userId": "firebase_user_id_3"
     }
 ];
 
@@ -169,22 +172,22 @@ const seed = async() => {
         });
         await photo.addTags(tags);
     } catch (error) {
-        console.error("it is an error")
+        console.error("it is an error", error)
     }
 
     try {
         const user = await User.findByPk("firebase_user_id_1");
-        const followerIds = ["firebase_user_id_2","firebase_user_id_3"];
+        const followerIds = ["firebase_user_id_2","firebase_user_id_3", "firebase_user_id_4"];
         const followers = await User.findAll({
             where: {
-                userID: followerIds,
+                id: followerIds,
             }
         });
         // const follower = await User.findByPk("firebase_user_id_2");
         // console.log(follower);
         await user.addFollower_id(followers);
     } catch (error) {
-        console.error("it is an error");
+        console.error("it is an error", error);
     }
 }
 
