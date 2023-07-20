@@ -1,4 +1,6 @@
 require('dotenv').config();
+const http = require('http')
+const ioLib = require('socket.io')
 const express = require('express');
 const cors = require('cors');
 const db = require('./db');
@@ -18,9 +20,19 @@ const setupRoutes = (app) => {
     app.use("/api", require("./api"));
 };
 
-const startServer = async (app,port) => {
+const startServer = async (app, server, port) => {
     await db.sync();
-    app.listen(port, () => {
+
+    const io = ioLib(server);
+
+    io.on('connection', (socket) => {
+        console.log('A user connected');
+        socket.on('new comment', (comment) => {
+            console.log('New comment: ', comment);
+            io.emit('new comment', comment)
+        })
+    })
+    server.listen(port, () => {
         console.log(`Server is running on port ${PORT}`);
       });
     return app;
@@ -29,10 +41,9 @@ const configureApp = (port) => {
     const app = express();
     setupMiddleWare(app)
     setupRoutes(app);
-    return startServer(app, port);
+    const server = http.createServer(app);
+    return startServer(app, server, port);
 };
-// Start the server
-
 
 
 module.exports = configureApp(PORT);
