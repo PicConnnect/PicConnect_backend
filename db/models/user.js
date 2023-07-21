@@ -6,7 +6,19 @@ const User = db.define("user", {
         type: DataTypes.STRING,
         primaryKey: true
     }, 
-    name: {
+    firstName: {
+        type: DataTypes.STRING,
+        allowNull: true,
+    },
+    lastName: {
+        type: DataTypes.STRING,
+        allowNull: true,
+    },
+    birthday: {
+        type: DataTypes.DATE,
+        allowNull: true,
+    },
+    phoneNumber: {
         type: DataTypes.STRING,
         allowNull: true,
     },
