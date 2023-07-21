@@ -55,14 +55,20 @@ router.post("/addPhoto", async(req, res, next) => {
     try {
         console.log(req.body);
         const {GPSAltitude, GPSLatitude, GPSLongitude, GPSPosition, description, 
-        downloads, exposure_time, focal_length, iso, make, model, title, urls, userId, tz, aperture} = req.body;
+        downloads,location_name, exposure_time, focal_length, iso, make, model, title, urls, userId, tz, aperture} = req.body;
+        //ceeate new row in location table adn retrun it to retreive id
+        const latitude = GPSLatitude; const longitude = GPSLongitude; const city = tz;
+        const createLocation = await Location.create({city, location_name, latitude, longitude}, {returning: true}).catch((error) => {
+            console.error("Error creating location:", error);
+        });
+        const locationId = createLocation.id;
         //create new row in cameradetails and return it to retreive id
         const createCameraDetails = await Camera_Details.create({make, model, exposure_time, aperture, focal_length, iso}, {returning: true}).catch((error) => {
             console.error("Error creating Camera_Details:", error);
         });
         const cameraDetailId = createCameraDetails.id;
 
-        const createPhoto = await Photo.create({title, description, downloads, urls, userId, cameraDetailId});
+        const createPhoto = await Photo.create({title, description, downloads, urls, userId, locationId, cameraDetailId});
         createPhoto
             ? res.status(200).json(createPhoto)
             : res.status(400).send("Can't add photo");
