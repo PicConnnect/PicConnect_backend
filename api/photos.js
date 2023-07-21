@@ -3,7 +3,7 @@ const fs = require('fs');
 const exiftool = require('exiftool-vendored').exiftool;
 const multer = require('multer');
 const router = express.Router();
-const { Photo, Tag }  = require("../db/models");
+const { Photo, Tag, Camera_Details, Location }  = require("../db/models");
 //const { Sequelize } = require("sequelize");
 
 //Root here is localhost:8000/api/photos
@@ -54,7 +54,15 @@ router.get("/user/:id", async (req,res, next) => {
 router.post("/addPhoto", async(req, res, next) => {
     try {
         console.log(req.body);
-        const createPhoto = await Photo.create(req.body);
+        const {GPSAltitude, GPSLatitude, GPSLongitude, GPSPosition, description, 
+        downloads, exposure_time, focal_length, iso, make, model, title, urls, userId, tz, aperture} = req.body;
+        //create new row in cameradetails and return it to retreive id
+        const createCameraDetails = await Camera_Details.create({make, model, exposure_time, aperture, focal_length, iso}, {returning: true}).catch((error) => {
+            console.error("Error creating Camera_Details:", error);
+        });
+        const cameraDetailId = createCameraDetails.id;
+
+        const createPhoto = await Photo.create({title, description, downloads, urls, userId, cameraDetailId});
         createPhoto
             ? res.status(200).json(createPhoto)
             : res.status(400).send("Can't add photo");
@@ -86,7 +94,8 @@ router.post('/extract-metadata', upload.single('photo'), async (req, res) => {
             'GPSLongitude',
             'GPSAltitude',
             'GPSPosition',
-            'tz'
+            'tz',
+            'Aperture'
         ];
         // Create an object to hold the extracted tags and their values
         const extractedTags = {};
