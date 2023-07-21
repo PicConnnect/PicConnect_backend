@@ -18,6 +18,26 @@ router.get("/:id", async (req, res, next) => {
         next(error);
     }
 });
+router.put('/profile-picture', async (req, res) => {
+    const { userId, profilePicUrl } = req.body;
+    //console.log("djkdjdj");
+    //console.log(await User.findByPk('WEj6fkNYQgf5KHbIhtX6DGSJzA43')); 
+    try {
+        //console.log("Received user ID: ", userId);
+        //console.log("Received profile picture URL: ", profilePicUrl);
+        const user = await User.findByPk(userId);
+        if (!user) {
+            return res.status(404).send('User not found');
+        }
+        user.profilePicUrl = profilePicUrl;
+        console.log(user);
+        await user.save();
+        return res.status(200).json(user);
+    } catch (err) {
+        console.error("Server error: ", err);
+        return res.status(500).send('Server error');
+    }
+});
 
 // handling edit user put request
 router.put("/:id", async (req, res, next) => {

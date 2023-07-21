@@ -10,6 +10,18 @@ const User = db.define("user", {
         type: DataTypes.STRING,
         allowNull: true,
     },
+    profilePicUrl: {
+        type: DataTypes.STRING,
+        allowNull: true,
+    },
+    birthday: {
+        type: DataTypes.DATE,
+        allowNull: true,
+    },
+    phoneNumber: {
+        type: DataTypes.STRING,
+        allowNull: true,
+    },
     about: {
         type: DataTypes.STRING,
         allowNull: true,
