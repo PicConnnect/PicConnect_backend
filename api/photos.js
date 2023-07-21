@@ -1,4 +1,7 @@
 const express = require ("express");
+const fs = require('fs');
+const exiftool = require('exiftool-vendored').exiftool;
+const multer = require('multer');
 const router = express.Router();
 const { Photo, Tag }  = require("../db/models");
 //const { Sequelize } = require("sequelize");
@@ -57,6 +60,58 @@ router.post("/addPhoto", async(req, res, next) => {
             : res.status(400).send("Can't add photo");
     } catch (error) {
         next(error);
+    }
+});
+
+// Set up multer for handling file uploads
+//multer options
+const upload = multer({dest: 'upload'});
+router.post('/extract-metadata', upload.single('photo'), async (req, res) => {
+    try {
+        if (!req.file) {
+          return res.status(400).json({ error: 'No file uploaded' });
+        }
+    
+        // Get the path of the uploaded photo
+        const filePath = req.file.path;
+
+        // Specify the tags you want to extract from the metadata
+        const tagsToExtract = [
+            'Make',
+            'Model',
+            'ExposureTime',
+            'ISO',
+            'FocalLength',
+            'GPSLatitude',
+            'GPSLongitude',
+            'GPSAltitude',
+            'GPSPosition',
+            'tz'
+        ];
+        // Create an object to hold the extracted tags and their values
+        const extractedTags = {};
+        // Extract metadata using exiftool
+        const metadata = await exiftool.read(filePath);
+        if(metadata){
+            tagsToExtract.forEach((tag) => {
+                if (tag in metadata) {
+                  extractedTags[tag] = metadata[tag];
+                }
+            });
+            
+            // Return the metadata as the response
+            res.json(extractedTags);
+        }
+        // Delete the uploaded image from upload folder after sending the response
+        fs.unlink(filePath, (err) => {
+            if (err) {
+          console.error('Error deleting the file:', err);
+        }
+        console.log('File deleted successfully');
+        });
+      } catch (err) {
+        console.error('Error extracting metadata:', err);
+        res.status(500).json({ error: 'Error extracting metadata' });
     }
 });
 //update photo
