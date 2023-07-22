@@ -107,6 +107,7 @@ router.delete("/:id/deleteFollower/:followerID", async (req, res, next) => {
     } catch (error) {
         next (error);
     }
-})
+});
+
 
 module.exports = router;
