@@ -5,6 +5,7 @@ const Location = require("./location");
 const Reply = require("./reply");
 const Tag = require("./tag");
 const User = require("./user");
+const Like = require("./like")
 
 //User 1 -> many Photo
 User.hasMany(Photo);
@@ -18,6 +19,11 @@ User.belongsToMany(User, {as: "following_id", through: "following", foreignKey: 
 User.belongsToMany(User, {as: "followers", through: "Following", foreignKey: 'followingId'});
 User.belongsToMany(User, {as: "following", through: "Following", foreignKey: 'followerId'});
 */
+
+//User many -> many Photo through Like
+User.belongsToMany(Photo, { through: Like, foreignKey: 'userId', otherKey: 'photoId' });
+Photo.belongsToMany(User, { through: Like, foreignKey: 'photoId', otherKey: 'userId' });
+
 
 //One photo can have many comments but a particular coment belongs to only one photo
 Photo.hasMany(Comment);
@@ -53,5 +59,6 @@ module.exports = {
     Location,
     Reply,
     Tag,
-    User
+    User,
+    Like
 };

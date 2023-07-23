@@ -3,7 +3,7 @@ const fs = require('fs');
 const exiftool = require('exiftool-vendored').exiftool;
 const multer = require('multer');
 const router = express.Router();
-const { Photo, Tag, Camera_Details, Location }  = require("../db/models");
+const { Photo, Tag, Camera_Details, Location, User, Like }  = require("../db/models");
 //const { Sequelize } = require("sequelize");
 
 //Root here is localhost:8000/api/photos
@@ -174,4 +174,35 @@ router.get("/tag/:tagId", async (req, res, next) => {
         next (error);
     }
 });
+// Like photo
+router.post("/:photoId/like", async (req, res, next) => {
+    try {
+      const userId = req.body.userId; // let's assume you send userId in the request body
+      const photoId = req.params.photoId;
+      console.log('Request body:', req.body)
+      console.log(`Attempting to like photo ${photoId} for user ${userId}`);
+      const like = await Like.create({ userId, photoId });
+      console.log(`Successfully liked photo ${photoId} for user ${userId}`);
+      res.status(200).json(like);
+    } catch (error) {
+        //console.error(`Failed to like photo ${photoId} for user ${userId}`, error);
+      next(error);
+    }
+  });
+  
+  // Unlike photo
+  router.delete("/:photoId/unlike", async (req, res, next) => {
+    try {
+      const userId = req.body.userId; // let's assume you send userId in the request body
+      const photoId = req.params.photoId;
+      console.log(`User with ID: ${userId} is unliking photo with ID: ${photoId}`);
+      await Like.destroy({ where: { userId, photoId } });
+      res.status(200).send("Photo unliked");
+    } catch (error) {
+      next(error);
+    }
+  });
+  
+  
+  
 module.exports = router;
