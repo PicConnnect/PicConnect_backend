@@ -1,6 +1,9 @@
 const express = require ("express");
+const fs = require('fs');
+const exiftool = require('exiftool-vendored').exiftool;
+const multer = require('multer');
 const router = express.Router();
-const { Photo, Tag, User, Like }  = require("../db/models");
+const { Photo, Tag, Camera_Details, Location, User, Like }  = require("../db/models");
 //const { Sequelize } = require("sequelize");
 
 //Root here is localhost:8000/api/photos
@@ -51,12 +54,79 @@ router.get("/user/:id", async (req,res, next) => {
 router.post("/addPhoto", async(req, res, next) => {
     try {
         console.log(req.body);
-        const createPhoto = await Photo.create(req.body);
+        const {GPSAltitude, GPSLatitude, GPSLongitude, GPSPosition, description, 
+        downloads,location_name, exposure_time, focal_length, iso, make, model, title, urls, userId, tz, aperture} = req.body;
+        //ceeate new row in location table adn retrun it to retreive id
+        const latitude = GPSLatitude; const longitude = GPSLongitude; const city = tz;
+        const createLocation = await Location.create({city, location_name, latitude, longitude}, {returning: true}).catch((error) => {
+            console.error("Error creating location:", error);
+        });
+        const locationId = createLocation.id;
+        //create new row in cameradetails and return it to retreive id
+        const createCameraDetails = await Camera_Details.create({make, model, exposure_time, aperture, focal_length, iso}, {returning: true}).catch((error) => {
+            console.error("Error creating Camera_Details:", error);
+        });
+        const cameraDetailId = createCameraDetails.id;
+
+        const createPhoto = await Photo.create({title, description, downloads, urls, userId, locationId, cameraDetailId});
         createPhoto
             ? res.status(200).json(createPhoto)
             : res.status(400).send("Can't add photo");
     } catch (error) {
         next(error);
+    }
+});
+
+// Set up multer for handling file uploads
+//multer options
+const upload = multer({dest: 'upload'});
+router.post('/extract-metadata', upload.single('photo'), async (req, res) => {
+    try {
+        if (!req.file) {
+          return res.status(400).json({ error: 'No file uploaded' });
+        }
+    
+        // Get the path of the uploaded photo
+        const filePath = req.file.path;
+
+        // Specify the tags you want to extract from the metadata
+        const tagsToExtract = [
+            'Make',
+            'Model',
+            'ExposureTime',
+            'ISO',
+            'FocalLength',
+            'GPSLatitude',
+            'GPSLongitude',
+            'GPSAltitude',
+            'GPSPosition',
+            'tz',
+            'Aperture'
+        ];
+        // Create an object to hold the extracted tags and their values
+        const extractedTags = {};
+        // Extract metadata using exiftool
+        const metadata = await exiftool.read(filePath);
+        if(metadata){
+            tagsToExtract.forEach((tag) => {
+                if (tag in metadata) {
+                  extractedTags[tag] = metadata[tag];
+                }
+            });
+            
+            // Return the metadata as the response
+            res.json(extractedTags);
+        }
+        // Delete the uploaded image from upload folder after sending the response
+        fs.unlink(filePath, (err) => {
+            if (err) {
+          console.error('Error deleting the file:', err);
+        }
+        console.log('File deleted successfully');
+        });
+      } catch (err) {
+        console.error('Error extracting metadata:', err);
+        res.status(500).json({ error: 'Error extracting metadata' });
     }
 });
 //update photo
