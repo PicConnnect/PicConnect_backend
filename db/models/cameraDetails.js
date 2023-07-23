@@ -11,7 +11,7 @@ const Camera_Details = db.define("camera_details",{
         allowNull: false
     },
     exposure_time:{
-        type: DataTypes.FLOAT,
+        type: DataTypes.STRING,
         allowNull: false
     },
     aperture:{
@@ -19,7 +19,7 @@ const Camera_Details = db.define("camera_details",{
         allowNull: false
     },
     focal_length:{
-        type: DataTypes.INTEGER,
+        type: DataTypes.STRING,
         allowNull: false
     },
     iso:{
