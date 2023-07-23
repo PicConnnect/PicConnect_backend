@@ -1,8 +1,10 @@
 const express = require ("express");
 const router = express.Router();
-const { User } = require("../db/models");
+const { User, Like, Photo } = require("../db/models");
 
 //ROOT HERE IS localhost:8000/api/users/
+// users.js
+
 // handling single user get request
 router.get("/:id", async (req, res, next) => {
     const id = req.params.id;
@@ -108,6 +110,9 @@ router.delete("/:id/deleteFollower/:followerID", async (req, res, next) => {
         next (error);
     }
 });
-
+router.get('/:userId/likes', async (req, res, next) => {
+    const likes = await Like.findAll();
+    res.json(likes);
+});
 
 module.exports = router;
