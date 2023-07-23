@@ -21,8 +21,9 @@ User.belongsToMany(User, {as: "following", through: "Following", foreignKey: 'fo
 */
 
 //User many -> many Photo through Like
-User.belongsToMany(Photo, {through: Like});
-Photo.belongsToMany(User, {through: Like});
+User.belongsToMany(Photo, { through: Like, foreignKey: 'userId', otherKey: 'photoId' });
+Photo.belongsToMany(User, { through: Like, foreignKey: 'photoId', otherKey: 'userId' });
+
 
 //One photo can have many comments but a particular coment belongs to only one photo
 Photo.hasMany(Comment);

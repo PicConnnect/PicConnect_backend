@@ -9,7 +9,7 @@ const { User, Like, Photo } = require("../db/models");
 router.get("/:id", async (req, res, next) => {
     const id = req.params.id;
     try {
-        console.log(id)
+        //console.log(id)
         const userInfo = await User.findByPk(id, {
             include: {all: true, nested: true},
         });
@@ -31,7 +31,7 @@ router.put('/profile-picture', async (req, res) => {
             return res.status(404).send('User not found');
         }
         user.profilePicUrl = profilePicUrl;
-        console.log(user);
+        //console.log(user);
         await user.save();
         return res.status(200).json(user);
     } catch (err) {
@@ -76,7 +76,7 @@ router.delete("/:id", async (req, res, next) => {
 router.post("/:id/addFollower/:followerID", async (req, res, next) => {
     
     const { id, followerID } = req.params;
-    console.log(id, followerID);
+    //console.log(id, followerID);
     try {
         const user = await User.findByPk(id);
         const follower = await User.findByPk(followerID);
@@ -110,9 +110,30 @@ router.delete("/:id/deleteFollower/:followerID", async (req, res, next) => {
         next (error);
     }
 });
-router.get('/:userId/likes', async (req, res, next) => {
-    const likes = await Like.findAll();
-    res.json(likes);
-});
+router.get('/:userId/likes', async (req, res) => {
+    try {
+      const userId = req.params.userId;
+  
+      // Get likes associated with user
+      const userLikes = await Like.findAll({
+        where: { userId: userId }
+      });
+  
+      // Map the userLikes to get array of photoId
+      const photoIds = userLikes.map(like => like.photoId);
+  
+      // Get all photos with id from photoIds
+      const photos = await Photo.findAll({
+        where: { id: photoIds }
+      });
+  
+      res.json(photos);
+    } catch (error) {
+      console.error(error);
+      res.status(500).send('Error retrieving user likes');
+    }
+  });
+  
+
 
 module.exports = router;
