@@ -214,7 +214,7 @@ router.delete("/:photoId/unlike", async (req, res, next) => {
  * Camera_Details in make and model,
  * Tag in tag_name 
  */
-router.post('/search', async (req, res) => {
+router.post('/search', async (req, res, next) => {
     let { query } = req.body;
     query = query.toLowerCase();
 
@@ -241,11 +241,6 @@ router.post('/search', async (req, res) => {
                     },
                     {
                         "$location.location_name$": {
-                            [Op.iLike]: `%${query}%`,
-                        },
-                    },
-                    {
-                        "$location.city$": {
                             [Op.iLike]: `%${query}%`,
                         },
                     },
@@ -300,7 +295,7 @@ router.post('/search', async (req, res) => {
     }
 });
 
-router.post('/restrictedSearch', async (req, res) => {
+router.post('/restrictedSearch', async (req, res, next) => {
     let { query } = req.body;
     const { title, loc_city, loc_name, camDetail_make, camDetail_model, tagPhoto } = req.body;
     query = query.toLowerCase();
@@ -405,4 +400,103 @@ router.post('/restrictedSearch', async (req, res) => {
 
 });
 
+// router.post('/advancedSearch', async (req, res, next) => {
+//     const { title, loc_city, loc_name, camDetail_make, camDetail_model, tagPhoto } = req.body;
+//     console.log(req.body)
+//     try {
+//         const searchResult = await Photo.findAll({
+//             where: {
+//                 [Op.and]: [
+//                     { title: { [Op.iLike]: `%${title}%` } },
+//                     {
+//                         "$location.city$": {
+//                             [Op.iLike]: `%${loc_city}%`,
+//                         },
+//                     },
+//                     {
+//                         "$location.location_name$": {
+//                             [Op.iLike]: `%${loc_name}%`,
+//                         },
+//                     },
+//                     {
+//                         "$camera_detail.make$": {
+//                             [Op.iLike]: `%${camDetail_make}%`
+//                         }
+//                     },
+//                     {
+//                         "$camera_detail.model$": {
+//                             [Op.iLike]: `%${camDetail_model}%`
+//                         }
+//                     }
+//                 ]
+//             },
+//             include: [
+//                 { model: Location, require: true, attributes: [], as: "location" },
+//                 { model: Camera_Details, require: true, attributes: [], as: "camera_detail" },
+//                 //{ model: Tag, require: true, attributes: [], as: "tags", where: { tag_name: { [Op.iLike]: `%${tagPhoto}%` } } },
+//                 { all: true, nested: true }
+//             ],
+//         });
+
+//         searchResult
+//             ? res.status(200).json(searchResult)
+//             : res.status(400).send("No photo found")
+//     }
+//     catch (error) {
+//         next(error)
+//     }
+
+
+// });
+
+/**
+ * This advanced search will search the photos with more than one user specified filters
+ * User will be prompt to give inputs for all category that he wants to search in
+ */
+router.post('/advancedSearch', async (req, res, next) => {
+    const { title, loc_city, loc_name, camDetail_make, camDetail_model, tagPhoto } = req.body;
+    try {
+        const photoSearchOptions = {
+            where: {},
+            include: [
+                { model: Location, require: true, attributes: [], as: "location" },
+                { model: Camera_Details, require: true, attributes: [], as: "camera_detail" },
+                { all: true, nested: true }
+            ],
+        };
+
+        if(title) {
+            photoSearchOptions.where.title = { [Op.iLike]: `%${title}%` };
+        };
+        if(loc_city) {
+            photoSearchOptions.where["$location.city$"] = {[Op.iLike]: `%${loc_city}%` };
+        };
+        if(loc_name) {
+            photoSearchOptions.where["$location.location_name$"] = {[Op.iLike]: `%${loc_name}%` };
+        };
+        if(camDetail_make){
+            photoSearchOptions.where["$camera_detail.make$"] =  {[Op.iLike]: `%${camDetail_make}%` };
+        };
+        if(camDetail_model){
+            photoSearchOptions.where["$camera_detail.model$"] =  {[Op.iLike]: `%${camDetail_model}%` };
+        };
+        if(tagPhoto){
+            photoSearchOptions.include.push({
+                model: Tag,
+                require: true,
+                where: {
+                    tag_name: {[Op.iLike]: `%${tagPhoto}`}
+                }
+            })
+        };
+
+        const searchResult = await Photo.findAll(photoSearchOptions);
+        searchResult
+            ? res.status(200).json(searchResult)
+            : res.status(400).send("No Photo found");
+    } 
+    catch(error){
+        next(error)
+    }
+})
 module.exports = router;
