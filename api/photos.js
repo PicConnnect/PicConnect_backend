@@ -1,9 +1,10 @@
-const express = require ("express");
+const express = require("express");
 const fs = require('fs');
 const exiftool = require('exiftool-vendored').exiftool;
 const multer = require('multer');
 const router = express.Router();
-const { Photo, Tag, Camera_Details, Location, User, Like }  = require("../db/models");
+const { Photo, Tag, Camera_Details, Location, User, Like } = require("../db/models");
+const { Op } = require("sequelize");
 //const { Sequelize } = require("sequelize");
 
 //Root here is localhost:8000/api/photos
@@ -15,7 +16,7 @@ router.get("/", async (req, res, next) => {
             //order: [[Sequelize.literal('RAND()')]],
             limit: 30,
             //all the includes
-            include: {all: true, nested: true},
+            include: { all: true, nested: true },
         });
         allphotos
             ? res.status(200).json(allphotos)
@@ -26,49 +27,49 @@ router.get("/", async (req, res, next) => {
 });
 
 
-router.get("/:id", async(req, res, next) => {
+router.get("/:id", async (req, res, next) => {
     const photoId = req.params.id;
     try {
-        const singlePhoto = await Photo.findByPk(photoId,{
+        const singlePhoto = await Photo.findByPk(photoId, {
             //all the includes
-            include: {all: true, nested: true},
+            include: { all: true, nested: true },
         });
         singlePhoto
             ? res.status(200).json(singlePhoto)
             : res.status(404).send("Photo Not Found");
-    } catch(error) {
+    } catch (error) {
         next(error);
     }
 });
 
-router.get("/user/:id", async (req,res, next) => {
+router.get("/user/:id", async (req, res, next) => {
     const { id } = req.params;
     try {
         const photos = await Photo.findAll({ where: { userId: id } });
         res.json(photos);
-      } catch (error) {
+    } catch (error) {
         next(error);
-      }
-}); 
+    }
+});
 //add photo
-router.post("/addPhoto", async(req, res, next) => {
+router.post("/addPhoto", async (req, res, next) => {
     try {
         console.log(req.body);
-        const {GPSAltitude, GPSLatitude, GPSLongitude, GPSPosition, description, 
-        downloads,location_name, exposure_time, focal_length, iso, make, model, title, urls, userId, tz, aperture} = req.body;
+        const { GPSAltitude, GPSLatitude, GPSLongitude, GPSPosition, description,
+            downloads, location_name, exposure_time, focal_length, iso, make, model, title, urls, userId, tz, aperture } = req.body;
         //ceeate new row in location table adn retrun it to retreive id
         const latitude = GPSLatitude; const longitude = GPSLongitude; const city = tz;
-        const createLocation = await Location.create({city, location_name, latitude, longitude}, {returning: true}).catch((error) => {
+        const createLocation = await Location.create({ city, location_name, latitude, longitude }, { returning: true }).catch((error) => {
             console.error("Error creating location:", error);
         });
         const locationId = createLocation.id;
         //create new row in cameradetails and return it to retreive id
-        const createCameraDetails = await Camera_Details.create({make, model, exposure_time, aperture, focal_length, iso}, {returning: true}).catch((error) => {
+        const createCameraDetails = await Camera_Details.create({ make, model, exposure_time, aperture, focal_length, iso }, { returning: true }).catch((error) => {
             console.error("Error creating Camera_Details:", error);
         });
         const cameraDetailId = createCameraDetails.id;
 
-        const createPhoto = await Photo.create({title, description, downloads, urls, userId, locationId, cameraDetailId});
+        const createPhoto = await Photo.create({ title, description, downloads, urls, userId, locationId, cameraDetailId });
         createPhoto
             ? res.status(200).json(createPhoto)
             : res.status(400).send("Can't add photo");
@@ -79,13 +80,13 @@ router.post("/addPhoto", async(req, res, next) => {
 
 // Set up multer for handling file uploads
 //multer options
-const upload = multer({dest: 'upload'});
+const upload = multer({ dest: 'upload' });
 router.post('/extract-metadata', upload.single('photo'), async (req, res) => {
     try {
         if (!req.file) {
-          return res.status(400).json({ error: 'No file uploaded' });
+            return res.status(400).json({ error: 'No file uploaded' });
         }
-    
+
         // Get the path of the uploaded photo
         const filePath = req.file.path;
 
@@ -107,24 +108,24 @@ router.post('/extract-metadata', upload.single('photo'), async (req, res) => {
         const extractedTags = {};
         // Extract metadata using exiftool
         const metadata = await exiftool.read(filePath);
-        if(metadata){
+        if (metadata) {
             tagsToExtract.forEach((tag) => {
                 if (tag in metadata) {
-                  extractedTags[tag] = metadata[tag];
+                    extractedTags[tag] = metadata[tag];
                 }
             });
-            
+
             // Return the metadata as the response
             res.json(extractedTags);
         }
         // Delete the uploaded image from upload folder after sending the response
         fs.unlink(filePath, (err) => {
             if (err) {
-          console.error('Error deleting the file:', err);
-        }
-        console.log('File deleted successfully');
+                console.error('Error deleting the file:', err);
+            }
+            console.log('File deleted successfully');
         });
-      } catch (err) {
+    } catch (err) {
         console.error('Error extracting metadata:', err);
         res.status(500).json({ error: 'Error extracting metadata' });
     }
@@ -156,8 +157,8 @@ router.delete("/:id", async (req, res, next) => {
             ? res.status(200).send("Photo deleted")
             : res.status(400).send("Photo not found");
     } catch (error) {
-        next (error);
-    } 
+        next(error);
+    }
 });
 
 router.get("/tag/:tagId", async (req, res, next) => {
@@ -165,44 +166,337 @@ router.get("/tag/:tagId", async (req, res, next) => {
     console.log(tagId)
     try {
         const tagPhotos = await Tag.findByPk(tagId, {
-            include: {all: true, nested: true},
+            include: { all: true, nested: true },
         });
         tagPhotos
             ? res.status(200).json(tagPhotos)
             : res.status(400).send("Photos not found");
     } catch (error) {
-        next (error);
+        next(error);
     }
 });
 // Like photo
 router.post("/:photoId/like", async (req, res, next) => {
     try {
-      const userId = req.body.userId; // let's assume you send userId in the request body
-      const photoId = req.params.photoId;
-      console.log('Request body:', req.body)
-      console.log(`Attempting to like photo ${photoId} for user ${userId}`);
-      const like = await Like.create({ userId, photoId });
-      console.log(`Successfully liked photo ${photoId} for user ${userId}`);
-      res.status(200).json(like);
+        const userId = req.body.userId; // let's assume you send userId in the request body
+        const photoId = req.params.photoId;
+        console.log('Request body:', req.body)
+        console.log(`Attempting to like photo ${photoId} for user ${userId}`);
+        const like = await Like.create({ userId, photoId });
+        console.log(`Successfully liked photo ${photoId} for user ${userId}`);
+        res.status(200).json(like);
     } catch (error) {
         //console.error(`Failed to like photo ${photoId} for user ${userId}`, error);
-      next(error);
+        next(error);
     }
-  });
-  
-  // Unlike photo
-  router.delete("/:photoId/unlike", async (req, res, next) => {
+});
+
+// Unlike photo
+router.delete("/:photoId/unlike", async (req, res, next) => {
     try {
-      const userId = req.body.userId; // let's assume you send userId in the request body
-      const photoId = req.params.photoId;
-      console.log(`User with ID: ${userId} is unliking photo with ID: ${photoId}`);
-      await Like.destroy({ where: { userId, photoId } });
-      res.status(200).send("Photo unliked");
+        const userId = req.body.userId; // let's assume you send userId in the request body
+        const photoId = req.params.photoId;
+        console.log(`User with ID: ${userId} is unliking photo with ID: ${photoId}`);
+        await Like.destroy({ where: { userId, photoId } });
+        res.status(200).send("Photo unliked");
     } catch (error) {
-      next(error);
+        next(error);
     }
-  });
-  
-  
-  
+});
+
+
+/**
+ * Following routing will enable the search function which will give out the list of photos according to the user's
+ * given prompt
+ * They will be search on following tables
+ * Photo itself in title,
+ * Location in city and location_name,
+ * Camera_Details in make and model,
+ * Tag in tag_name 
+ */
+router.post('/search', async (req, res, next) => {
+    let { query } = req.body;
+    query = query.toLowerCase();
+
+    try {
+
+        //find if the tag exists or consider even is it a tag
+        const tag = await Tag.findOne({
+            where: {
+                tag_name: { [Op.iLike]: `%${query}%` }
+            },
+            include: [{ all: true, nested: true }]
+        });
+
+        //handling on one to many table (location and camera detail) and Photos 
+        //only prep for searchOptions
+        const searchOptions = {
+            where: {
+                [Op.or]: [
+                    { title: { [Op.iLike]: `%${query}%` } },
+                    {
+                        "$location.city$": {
+                            [Op.iLike]: `%${query}%`,
+                        },
+                    },
+                    {
+                        "$location.location_name$": {
+                            [Op.iLike]: `%${query}%`,
+                        },
+                    },
+                    {
+                        "$camera_detail.make$": {
+                            [Op.iLike]: `%${query}%`
+                        }
+                    },
+                    {
+                        "$camera_detail.model$": {
+                            [Op.iLike]: `%${query}%`
+                        }
+                    }
+                ]
+            },
+            include: [
+                { model: Location, require: true, attributes: [], as: "location" },
+                { model: Camera_Details, require: true, attributes: [], as: "camera_detail" },
+                { model: Tag, require: true, attributes: [], as: "tags" },
+                { all: true, nested: true }
+            ],
+        };
+        //init blank array for searchResult that hasn't check duplicates.
+        let searchResult = [];
+        //if tag exists, find all photos with tag
+        if (tag) {
+
+            const photosWithTag = tag.photos;
+            console.log(photosWithTag);
+            searchResult.push(...photosWithTag);
+
+        }
+        //get all photos from searchOptions then push to the searchResult
+        const photoSearchOptions = await Photo.findAll(searchOptions);
+        searchResult.push(...photoSearchOptions);
+
+        //check the duplicate with photoIds
+        const uniqueSearchResults = [];
+        const uniquePhotoIds = new Set();
+        for (let eachPhoto of searchResult) {
+            if (!uniquePhotoIds.has(eachPhoto.id)) {
+                uniqueSearchResults.push(eachPhoto);
+                uniquePhotoIds.add(eachPhoto.id);
+            }
+        }
+        uniqueSearchResults.length > 0
+            ? res.status(200).json(uniqueSearchResults)
+            : res.status(400).send("No photo found");
+
+    } catch (error) {
+        next(error);
+    }
+});
+
+router.post('/restrictedSearch', async (req, res, next) => {
+    let { query } = req.body;
+    const { title, loc_city, loc_name, camDetail_make, camDetail_model, tagPhoto } = req.body;
+    query = query.toLowerCase();
+    searchResult = [];
+
+    try {
+        if (title) {
+            const titlePhotoSearch = await Photo.findAll({
+                where: { title: query },
+                include: { all: true, nested: true }
+            });
+            searchResult.push(...titlePhotoSearch);
+        };
+
+        if (loc_city) {
+            const cityPhotoSearch = await Photo.findAll({
+                where: {
+                    "$location.city$": {
+                        [Op.iLike]: `%${query}%`,
+                    },
+                },
+                include: [
+                    { model: Location, require: true, attributes: [], as: "location" },
+                    { all: true, nested: true }
+                ]
+            });
+            searchResult.push(...cityPhotoSearch);
+        };
+
+        if (loc_name) {
+            const locNamePhotoSearch = await Photo.findAll({
+                where: {
+                    "$location.location_name$": {
+                        [Op.iLike]: `%${query}%`,
+                    },
+                },
+                include: [
+                    { model: Location, require: true, attributes: [], as: "location" },
+                    { all: true, nested: true }
+                ]
+            });
+            searchResult.push(...locNamePhotoSearch);
+        };
+
+        if (camDetail_make) {
+            const camMakePhotoSearch = await Photo.findAll({
+                where: {
+                    "$camera_detail.make$": {
+                        [Op.iLike]: `%${query}%`,
+                    },
+                },
+                include: [
+                    { model: Camera_Details, require: true, attributes: [], as: "camera_detail" },
+                    { all: true, nested: true }
+                ]
+            });
+            searchResult.push(...camMakePhotoSearch);
+        };
+
+        if (camDetail_model) {
+            const camModelPhotoSearch = await Photo.findAll({
+                where: {
+                    "$camera_detail.model$": {
+                        [Op.iLike]: `%${query}%`,
+                    },
+                },
+                include: [
+                    { model: Camera_Details, require: true, attributes: [], as: "camera_detail" },
+                    { all: true, nested: true }
+                ]
+            });
+            searchResult.push(...camModelPhotoSearch);
+        };
+
+        if (tagPhoto) {
+            const tag = await Tag.findOne({
+                where: {
+                    tag_name: { [Op.iLike]: `%${query}%` }
+                },
+                include: [{ all: true, nested: true }]
+            });
+            const photosWithTag = tag.photos;
+            console.log(photosWithTag);
+            searchResult.push(...photosWithTag);
+        };
+
+        const uniqueSearchResults = [];
+        const uniquePhotoIds = new Set();
+        for (let eachPhoto of searchResult) {
+            if (!uniquePhotoIds.has(eachPhoto.id)) {
+                uniqueSearchResults.push(eachPhoto);
+                uniquePhotoIds.add(eachPhoto.id);
+            }
+        }
+        uniqueSearchResults.length > 0
+            ? res.status(200).json(uniqueSearchResults)
+            : res.status(400).send("No photo found");
+    }
+    catch (error) {
+        next(error)
+    }
+
+});
+
+// router.post('/advancedSearch', async (req, res, next) => {
+//     const { title, loc_city, loc_name, camDetail_make, camDetail_model, tagPhoto } = req.body;
+//     console.log(req.body)
+//     try {
+//         const searchResult = await Photo.findAll({
+//             where: {
+//                 [Op.and]: [
+//                     { title: { [Op.iLike]: `%${title}%` } },
+//                     {
+//                         "$location.city$": {
+//                             [Op.iLike]: `%${loc_city}%`,
+//                         },
+//                     },
+//                     {
+//                         "$location.location_name$": {
+//                             [Op.iLike]: `%${loc_name}%`,
+//                         },
+//                     },
+//                     {
+//                         "$camera_detail.make$": {
+//                             [Op.iLike]: `%${camDetail_make}%`
+//                         }
+//                     },
+//                     {
+//                         "$camera_detail.model$": {
+//                             [Op.iLike]: `%${camDetail_model}%`
+//                         }
+//                     }
+//                 ]
+//             },
+//             include: [
+//                 { model: Location, require: true, attributes: [], as: "location" },
+//                 { model: Camera_Details, require: true, attributes: [], as: "camera_detail" },
+//                 //{ model: Tag, require: true, attributes: [], as: "tags", where: { tag_name: { [Op.iLike]: `%${tagPhoto}%` } } },
+//                 { all: true, nested: true }
+//             ],
+//         });
+
+//         searchResult
+//             ? res.status(200).json(searchResult)
+//             : res.status(400).send("No photo found")
+//     }
+//     catch (error) {
+//         next(error)
+//     }
+
+
+// });
+
+/**
+ * This advanced search will search the photos with more than one user specified filters
+ * User will be prompt to give inputs for all category that he wants to search in
+ */
+router.post('/advancedSearch', async (req, res, next) => {
+    const { title, loc_city, loc_name, camDetail_make, camDetail_model, tagPhoto } = req.body;
+    try {
+        const photoSearchOptions = {
+            where: {},
+            include: [
+                { model: Location, require: true, attributes: [], as: "location" },
+                { model: Camera_Details, require: true, attributes: [], as: "camera_detail" },
+                { all: true, nested: true }
+            ],
+        };
+
+        if(title) {
+            photoSearchOptions.where.title = { [Op.iLike]: `%${title}%` };
+        };
+        if(loc_city) {
+            photoSearchOptions.where["$location.city$"] = {[Op.iLike]: `%${loc_city}%` };
+        };
+        if(loc_name) {
+            photoSearchOptions.where["$location.location_name$"] = {[Op.iLike]: `%${loc_name}%` };
+        };
+        if(camDetail_make){
+            photoSearchOptions.where["$camera_detail.make$"] =  {[Op.iLike]: `%${camDetail_make}%` };
+        };
+        if(camDetail_model){
+            photoSearchOptions.where["$camera_detail.model$"] =  {[Op.iLike]: `%${camDetail_model}%` };
+        };
+        if(tagPhoto){
+            photoSearchOptions.include.push({
+                model: Tag,
+                require: true,
+                where: {
+                    tag_name: {[Op.iLike]: `%${tagPhoto}`}
+                }
+            })
+        };
+
+        const searchResult = await Photo.findAll(photoSearchOptions);
+        searchResult
+            ? res.status(200).json(searchResult)
+            : res.status(400).send("No Photo found");
+    } 
+    catch(error){
+        next(error)
+    }
+})
 module.exports = router;
