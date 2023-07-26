@@ -4,6 +4,7 @@ const exiftool = require('exiftool-vendored').exiftool;
 const multer = require('multer');
 const router = express.Router();
 const { Photo, Tag, Camera_Details, Location, User, Like }  = require("../db/models");
+const { Op } = require ("sequelize");
 //const { Sequelize } = require("sequelize");
 
 //Root here is localhost:8000/api/photos
@@ -203,6 +204,100 @@ router.post("/:photoId/like", async (req, res, next) => {
     }
   });
   
+
+/**
+ * Following routing will enable the search function which will give out the list of photos according to the user's
+ * given prompt
+ * They will be search on following tables
+ * Photo itself in title,
+ * Location in city and location_name,
+ * Camera_Details in make and model,
+ * Tag in tag_name 
+ */
+router.post('/search', async (req, res) => {
+    let { query } = req.body;
+    query = query.toLowerCase();
+
+    try {
+
+        //find if the tag exists or consider even is it a tag
+        const tag = await Tag.findOne({
+            where: {
+                tag_name: { [Op.iLike]: `%${query}%`}
+            },
+            include: [{ model: Photo }]
+        });
+
+        //handling on one to many table (location and camera detail) and Photos 
+        //only prep for searchOptions
+        const searchOptions = {
+            where: {
+                [Op.or]: [
+                    { title: { [Op.iLike]: `%${query}%` } },
+                    {
+                        "$location.city$": {
+                          [Op.iLike]: `%${query}%`,
+                        },
+                    },
+                    {
+                        "$location.location_name$": {
+                          [Op.iLike]: `%${query}%`,
+                        },
+                    },
+                    {
+                        "$location.city$": {
+                          [Op.iLike]: `%${query}%`,
+                        },
+                    },
+                    {
+                        "$camera_detail.make$": {
+                            [Op.iLike]: `%${query}%`
+                        }
+                    },
+                    {
+                        "$camera_detail.model$": {
+                            [Op.iLike]: `%${query}%`
+                        }
+                    }
+                ]
+            },
+            include:[
+                {model: Location, require: true, attributes: [], as: "location"},
+                {model: Camera_Details, require: true, attributes:[], as: "camera_detail"},
+                {model: Tag, require: true, attributes: [], as: "tags"}
+            ],
+        };
+        //init blank array for searchResult that hasn't check duplicates.
+        let searchResult = [];
+        //if tag exists, find all photos with tag
+        if(tag){
+            
+            const photosWithTag = tag.photos;
+            console.log(photosWithTag);
+            searchResult.push(...photosWithTag);
+
+        }
+        //get all photos from searchOptions then push to the searchResult
+        const photoSearchOptions = await Photo.findAll(searchOptions);
+        searchResult.push(...photoSearchOptions);
+
+        //check the duplicate with photoIds
+        const uniqueSearchResults = [];
+        const uniquePhotoIds = new Set();
+        for(let eachPhoto of searchResult) {
+            if(!uniquePhotoIds.has(eachPhoto.id)){
+                uniqueSearchResults.push(eachPhoto);
+                uniquePhotoIds.add(eachPhoto.id);
+            }
+        }
+        uniqueSearchResults.length > 0
+            ? res.status(200).json(uniqueSearchResults)
+            : res.status(400).send("No photo found");
+        
+    } catch (error) {
+       next(error);
+    }
+  });
   
   
 module.exports = router;

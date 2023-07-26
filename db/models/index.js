@@ -43,7 +43,7 @@ Reply.belongsTo(User);
 
 //Location 1 -> many photo
 Location.hasMany(Photo);
-Photo.belongsTo(Location);
+Photo.belongsTo(Location, { foreignKey: "locationId"});
 
 //Camera_details 1 -> many Photo
 Camera_Details.hasMany(Photo);
