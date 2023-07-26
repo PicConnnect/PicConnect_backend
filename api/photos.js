@@ -1,25 +1,44 @@
 const express = require("express");
+const Redis = require("ioredis");
 const fs = require('fs');
 const exiftool = require('exiftool-vendored').exiftool;
 const multer = require('multer');
 const router = express.Router();
 const { Photo, Tag, Camera_Details, Location, User, Like } = require("../db/models");
-const { Op } = require("sequelize");
+const { Op, json } = require("sequelize");
 //const { Sequelize } = require("sequelize");
-
+//create new redis instance
+const redis = new Redis(process.env.REDIS_URL);
 //Root here is localhost:8000/api/photos
 //getting all photos
 router.get("/", async (req, res, next) => {
     try {
-        const allphotos = await Photo.findAll({
-            //if you want to randomize the data, - also uncomment sequelize too
-            //order: [[Sequelize.literal('RAND()')]],
-            limit: 30,
-            //all the includes
-            include: { all: true, nested: true },
-        });
-        allphotos
-            ? res.status(200).json(allphotos)
+        let allPhotos = null;
+        const startTimeRedis = process.hrtime(); // Get the start time
+        const cachedPosts = await redis.get("allPhotos");
+        if(cachedPosts){
+            allPhotos = JSON.parse(cachedPosts);
+            const endTimeRedis = process.hrtime(startTimeRedis); // Get the end time for Redis retrieval
+            const loadingTimeRedis = endTimeRedis[0] * 1000 + endTimeRedis[1] / 1e6; // Calculate the Redis loading time in milliseconds
+            console.log("Redis Loading time:", loadingTimeRedis, "ms");
+        }else{
+            const startTimeDB = process.hrtime();
+            allPhotos = await Photo.findAll({
+                //if you want to randomize the data, - also uncomment sequelize too
+                //order: [[Sequelize.literal('RAND()')]],
+                limit: 30,
+                //all the includes
+                include: { all: true, nested: true },
+            });
+            const endTimeDB = process.hrtime(startTimeDB); // Get the end time for direct database retrieval
+            const loadingTimeDB = endTimeDB[0] * 1000 + endTimeDB[1] / 1e6; // Calculate the database loading time in milliseconds
+            console.log("Database Loading time:", loadingTimeDB, "ms");
+            if(allPhotos){
+                await redis.set("allPhotos", JSON.stringify(allPhotos));
+            }
+        }
+        allPhotos
+            ? res.status(200).json(allPhotos)
             : res.status(404).send("Photos Not Found");
     } catch (error) {
         next(error);
@@ -214,7 +233,7 @@ router.delete("/:photoId/unlike", async (req, res, next) => {
  * Camera_Details in make and model,
  * Tag in tag_name 
  */
-router.post('/search', async (req, res, next) => {
+router.post('/search', async (req, res) => {
     let { query } = req.body;
     query = query.toLowerCase();
 
@@ -241,6 +260,11 @@ router.post('/search', async (req, res, next) => {
                     },
                     {
                         "$location.location_name$": {
+                            [Op.iLike]: `%${query}%`,
+                        },
+                    },
+                    {
+                        "$location.city$": {
                             [Op.iLike]: `%${query}%`,
                         },
                     },
@@ -295,7 +319,7 @@ router.post('/search', async (req, res, next) => {
     }
 });
 
-router.post('/restrictedSearch', async (req, res, next) => {
+router.post('/restrictedSearch', async (req, res) => {
     let { query } = req.body;
     const { title, loc_city, loc_name, camDetail_make, camDetail_model, tagPhoto } = req.body;
     query = query.toLowerCase();
@@ -400,103 +424,4 @@ router.post('/restrictedSearch', async (req, res, next) => {
 
 });
 
-// router.post('/advancedSearch', async (req, res, next) => {
-//     const { title, loc_city, loc_name, camDetail_make, camDetail_model, tagPhoto } = req.body;
-//     console.log(req.body)
-//     try {
-//         const searchResult = await Photo.findAll({
-//             where: {
-//                 [Op.and]: [
-//                     { title: { [Op.iLike]: `%${title}%` } },
-//                     {
-//                         "$location.city$": {
-//                             [Op.iLike]: `%${loc_city}%`,
-//                         },
-//                     },
-//                     {
-//                         "$location.location_name$": {
-//                             [Op.iLike]: `%${loc_name}%`,
-//                         },
-//                     },
-//                     {
-//                         "$camera_detail.make$": {
-//                             [Op.iLike]: `%${camDetail_make}%`
-//                         }
-//                     },
-//                     {
-//                         "$camera_detail.model$": {
-//                             [Op.iLike]: `%${camDetail_model}%`
-//                         }
-//                     }
-//                 ]
-//             },
-//             include: [
-//                 { model: Location, require: true, attributes: [], as: "location" },
-//                 { model: Camera_Details, require: true, attributes: [], as: "camera_detail" },
-//                 //{ model: Tag, require: true, attributes: [], as: "tags", where: { tag_name: { [Op.iLike]: `%${tagPhoto}%` } } },
-//                 { all: true, nested: true }
-//             ],
-//         });
-
-//         searchResult
-//             ? res.status(200).json(searchResult)
-//             : res.status(400).send("No photo found")
-//     }
-//     catch (error) {
-//         next(error)
-//     }
-
-
-// });
-
-/**
- * This advanced search will search the photos with more than one user specified filters
- * User will be prompt to give inputs for all category that he wants to search in
- */
-router.post('/advancedSearch', async (req, res, next) => {
-    const { title, loc_city, loc_name, camDetail_make, camDetail_model, tagPhoto } = req.body;
-    try {
-        const photoSearchOptions = {
-            where: {},
-            include: [
-                { model: Location, require: true, attributes: [], as: "location" },
-                { model: Camera_Details, require: true, attributes: [], as: "camera_detail" },
-                { all: true, nested: true }
-            ],
-        };
-
-        if(title) {
-            photoSearchOptions.where.title = { [Op.iLike]: `%${title}%` };
-        };
-        if(loc_city) {
-            photoSearchOptions.where["$location.city$"] = {[Op.iLike]: `%${loc_city}%` };
-        };
-        if(loc_name) {
-            photoSearchOptions.where["$location.location_name$"] = {[Op.iLike]: `%${loc_name}%` };
-        };
-        if(camDetail_make){
-            photoSearchOptions.where["$camera_detail.make$"] =  {[Op.iLike]: `%${camDetail_make}%` };
-        };
-        if(camDetail_model){
-            photoSearchOptions.where["$camera_detail.model$"] =  {[Op.iLike]: `%${camDetail_model}%` };
-        };
-        if(tagPhoto){
-            photoSearchOptions.include.push({
-                model: Tag,
-                require: true,
-                where: {
-                    tag_name: {[Op.iLike]: `%${tagPhoto}`}
-                }
-            })
-        };
-
-        const searchResult = await Photo.findAll(photoSearchOptions);
-        searchResult
-            ? res.status(200).json(searchResult)
-            : res.status(400).send("No Photo found");
-    } 
-    catch(error){
-        next(error)
-    }
-})
 module.exports = router;
