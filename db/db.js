@@ -1,11 +1,10 @@
-require('dotenv').config();
+require("dotenv").config();
 const { Sequelize } = require("sequelize");
-const { name } = require("../package.json");
 
-console.log(process.env.POSTGRES_URL+`${name}`)
+console.log(process.env.POSTGRES_URL);
 //connect with the database
-const db = new Sequelize(process.env.POSTGRES_URL+`${name}`, {
-    logging: false
+const db = new Sequelize(process.env.POSTGRES_URL, {
+  logging: false,
 });
 
 module.exports = db;
