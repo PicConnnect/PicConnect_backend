@@ -1,6 +1,7 @@
 const express = require ("express");
 const router = express.Router();
 const { User, Like, Photo } = require("../db/models");
+const { Op } = require("sequelize");
 
 //ROOT HERE IS localhost:8000/api/users/
 // users.js
@@ -132,8 +133,30 @@ router.get('/:userId/likes', async (req, res) => {
       console.error(error);
       res.status(500).send('Error retrieving user likes');
     }
-  });
-  
+});
 
+router.post('/search', async (req, res, next) => {
+    const { query } = req.body;
+    try{
+        const userSearchOptions = {
+            where: {},
+            include: {all: true, nested: true},
+        };
 
+        if(query){
+            userSearchOptions.where.name = {
+                [Op.iLike]: `%${query}%`
+            };
+        };
+
+        const searchResults = await User.findAll(userSearchOptions);
+
+        searchResults
+            ? res.status(200).json(searchResults)
+            : res.status(400).send("No user found");
+
+    } catch(error) {
+        next(error)
+    }
+})
 module.exports = router;
