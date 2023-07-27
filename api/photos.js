@@ -423,5 +423,54 @@ router.post('/restrictedSearch', async (req, res) => {
     }
 
 });
+/**
+ * This advanced search will search the photos with more than one user specified filters
+ * User will be prompt to give inputs for all category that he wants to search in
+ */
+router.post('/advancedSearch', async (req, res, next) => {
+    const { title, loc_city, loc_name, camDetail_make, camDetail_model, tagPhoto } = req.body;
+    try {
+        const photoSearchOptions = {
+            where: {},
+            include: [
+                { model: Location, require: true, attributes: [], as: "location" },
+                { model: Camera_Details, require: true, attributes: [], as: "camera_detail" },
+                { all: true, nested: true }
+            ],
+        };
 
+        if(title) {
+            photoSearchOptions.where.title = { [Op.iLike]: `%${title}%` };
+        };
+        if(loc_city) {
+            photoSearchOptions.where["$location.city$"] = {[Op.iLike]: `%${loc_city}%` };
+        };
+        if(loc_name) {
+            photoSearchOptions.where["$location.location_name$"] = {[Op.iLike]: `%${loc_name}%` };
+        };
+        if(camDetail_make){
+            photoSearchOptions.where["$camera_detail.make$"] =  {[Op.iLike]: `%${camDetail_make}%` };
+        };
+        if(camDetail_model){
+            photoSearchOptions.where["$camera_detail.model$"] =  {[Op.iLike]: `%${camDetail_model}%` };
+        };
+        if(tagPhoto){
+            photoSearchOptions.include.push({
+                model: Tag,
+                require: true,
+                where: {
+                    tag_name: {[Op.iLike]: `%${tagPhoto}`}
+                }
+            })
+        };
+
+        const searchResult = await Photo.findAll(photoSearchOptions);
+        searchResult
+            ? res.status(200).json(searchResult)
+            : res.status(400).send("No Photo found");
+    } 
+    catch(error){
+        next(error)
+    }
+});
 module.exports = router;
