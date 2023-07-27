@@ -73,6 +73,39 @@ router.delete("/:id", async (req, res, next) => {
         next (error);
     }
 });
+//handling get the people that the current user is following
+router.get("/Following/:id", async (req, res, next) => {
+    const id = req.params.id;
+    try {
+        //console.log(id)
+        const userFollowing = await User.findByPk(id, {include:[{model: User, as: 'following_id'}]});
+        if (userFollowing) {
+            userFollowing.profilePicUrl = userFollowing.profilePicUrl || 'https://cdn-icons-png.flaticon.com/512/847/847969.png?w=996&t=st=1689999078~exp=1689999678~hmac=55469eb17eccadb1b2993272870eb2de6c1d2599d0699f175b2cd518d5395bb8'; // put the URL of your default image here
+            res.status(200).json(userFollowing);
+        } else {
+            res.status(404).send("User not found");
+        }
+    } catch (error) {
+        next(error);
+    }
+});
+
+//handling get followers to see how many people that follows the user
+router.get("/Followers/:id", async (req, res, next) => {
+    const id = req.params.id;
+    try {
+        //console.log(id)
+        const userFollowers = await User.findByPk(id, {include:[{model: User, as: 'follower_id'}]});
+        if (userFollowers) {
+            userFollowers.profilePicUrl = userFollowers.profilePicUrl || 'https://cdn-icons-png.flaticon.com/512/847/847969.png?w=996&t=st=1689999078~exp=1689999678~hmac=55469eb17eccadb1b2993272870eb2de6c1d2599d0699f175b2cd518d5395bb8'; // put the URL of your default image here
+            res.status(200).json(userFollowers);
+        } else {
+            res.status(404).send("User not found");
+        }
+    } catch (error) {
+        next(error);
+    }
+});
 
 //handling add follower to the user post request
 router.post("/:id/addFollower/:followerID", async (req, res, next) => {
