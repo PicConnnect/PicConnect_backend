@@ -46,9 +46,10 @@ router.put("/:id", async (req, res, next) => {
     const id = req.params.id;
     const updateUser = req.body;
     try {
-        const updatedUser = await User.update(updateUser, {
+        await User.update(updateUser, {
             where:{id: id}, 
         });
+        const updatedUser = await User.findByPk(id);
         updatedUser
             ? res.status(200).json(updatedUser)
             : res.status(400).send("user not found");
