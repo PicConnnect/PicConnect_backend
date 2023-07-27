@@ -4,13 +4,13 @@ const http = require("http");
 const express = require("express");
 const cors = require("cors");
 const db = require("./db");
-const PORT = 8000;
+const PORT = process.env.PORT || 8000;
 
 // Middleware
 const setupMiddleWare = (app) => {
   app.use(
     cors({
-      origin: ["http://localhost:3000"], //app url
+      origin: [process.env.FRONTEND_URL], //app url
       credentials: true,
     })
   );
@@ -33,7 +33,7 @@ const startServer = async (app, server, port) => {
   //socekt.io setup with cors
   const io = require("socket.io")(server, {
     cors: {
-      origin: "http://localhost:3000", //app url
+      origin: process.env.FRONTEND_URL, //app url
       //methods: ['GET', 'POST']
       credentials: true,
     },
