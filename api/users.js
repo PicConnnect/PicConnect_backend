@@ -135,6 +135,10 @@ router.get('/:userId/likes', async (req, res) => {
     }
 });
 
+/**
+ * This search method will give out the list of users when requested with the prompt
+ * 
+ */
 router.post('/search', async (req, res, next) => {
     const { query } = req.body;
     try{
