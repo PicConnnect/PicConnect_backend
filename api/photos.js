@@ -12,7 +12,7 @@ const {
   User,
   Like,
 } = require("../db/models");
-// const { Op, json } = require("sequelize");
+const { Op, json } = require("sequelize");
 
 //const { Sequelize } = require("sequelize");
 //create new redis instance
