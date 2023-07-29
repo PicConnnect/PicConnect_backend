@@ -1,5 +1,5 @@
 require("dotenv").config();
-const { Comment, Photo, User } = require("./db/models");
+const { Comment, Photo, User, Reply } = require("./db/models");
 const http = require("http");
 const express = require("express");
 const cors = require("cors");
@@ -42,7 +42,7 @@ const startServer = async (app, server, port) => {
   //event handlers
   io.on("connection", (socket) => {
     console.log("A user connected");
-
+    
     socket.on("joinRoom", async (roomId) => {
       console.log(`Joined room: ${roomId}`);
       socket.join(roomId);
@@ -60,6 +60,17 @@ const startServer = async (app, server, port) => {
       //console.log(`Saved comment: ${JSON.stringify(newComment)}`);
       //show comment to every other user in the room
       io.to(data.roomId).emit('newComment', newComment);
+    });
+
+    //new comment events
+    socket.on("newReply", async (data) => {
+      console.log(`Received new reply from client: ${data}`);
+      //save comment to db
+      const newReply = await saveReplyToDatabase(data.reply, data.userId, data.roomId);
+      console.log(`Saved reply to database: ${newReply}`);
+      //console.log(`Saved comment: ${JSON.stringify(newComment)}`);
+      //show comment to every other user in the room
+      io.to(data.roomId).emit('newComment', newReply);
     });
 
     socket.on("disconnect", () => {
@@ -85,14 +96,25 @@ const configureApp = (port) => {
 
 module.exports = configureApp(PORT);
 
+
 async function getCommentsFromDatabase(photoId) {
   try {
     const comments = await Comment.findAll({
       where: { photoId },
-      include: User,
+      include: [
+        {
+          model: User,
+          as: "user",
+        },
+        {
+          model: Reply,
+          as: "replies",
+          include: User,
+        },
+      ],
       order: [["createdAt", "DESC"]],
     });
-    console.log(`Comments fetched from database for photoId ${photoId}: ${comments}`);
+    //console.log(`Comments fetched from database for photoId ${photoId}: ${comments}`);
     return comments;
   } catch (error) {
     console.error(`Failed to get comments: ${error}`);
@@ -106,8 +128,22 @@ async function saveCommentToDatabase(comment, userId, photoId) {
       userId,
       photoId,
     });
-    console.log(`Comment saved to database: ${newComment}`);
+    //console.log(`Comment saved to database: ${newComment}`);
     return newComment;
+  } catch (error) {
+    console.error(`Failed to post comment: ${error}`);
+  }
+}
+
+async function saveReplyToDatabase(reply, userId, commentId) {
+  try {
+    const newReply = await Reply.create({
+      reply_text: reply,
+      userId,
+      commentId
+    });
+    console.log(`Comment saved to database: ${newReply}`);
+    return newReply;
   } catch (error) {
     console.error(`Failed to post comment: ${error}`);
   }
