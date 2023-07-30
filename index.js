@@ -72,6 +72,25 @@ const startServer = async (app, server, port) => {
       //show comment to every other user in the room
       io.to(data.roomId).emit('newComment', newReply);
     });
+    socket.on("deleteReply", async (data) => {
+      console.log(`deleted new reply from client: ${data}`);
+      //save comment to db
+      const deleteReply = await deleteReplyFromDatabase(data);
+      console.log(`deleted reply to database: ${deleteReply}`);
+      //console.log(`Saved comment: ${JSON.stringify(newComment)}`);
+      //show comment to every other user in the room
+      io.to(data.roomId).emit('deleteReply', deleteReply);
+    });
+
+    socket.on("deleteComment", async (data) => {
+      console.log(`deleted new comment from client: ${data}`);
+      //save comment to db
+      const deleteComment = await deleteCommentFromDatabase(data);
+      console.log(`deleted reply to database: ${deleteComment}`);
+      //console.log(`Saved comment: ${JSON.stringify(newComment)}`);
+      //show comment to every other user in the room
+      io.to(data.roomId).emit('deleteComment', deleteComment);
+    });
 
     socket.on("disconnect", () => {
       console.log("Client disconnected");
@@ -148,3 +167,53 @@ async function saveReplyToDatabase(reply, userId, commentId) {
     console.error(`Failed to post comment: ${error}`);
   }
 }
+async function deleteCommentFromDatabase(commentId) {
+  try {
+    // Assuming you have a model named "Reply" to interact with the replies table in the database
+    const deletedReplies = await Reply.destroy({
+      where: {
+        commentId: commentId
+      }
+    });
+
+    const deletedComment = await Comment.destroy({
+      where: {
+        id: commentId
+      }
+    });
+
+    if (deletedComment === 0) {
+      console.log(`Comment with ID ${commentId} not found.`);
+      return `Comment with ID ${commentId} not found.`;
+    }
+
+    console.log(`Comment with ID ${commentId} and its associated replies deleted from the database.`);
+    return {
+      deletedCommentCount: deletedComment,
+      deletedRepliesCount: deletedReplies
+    };
+  } catch (error) {
+    console.error(`Failed to delete comment: ${error}`);
+  }
+}
+
+async function deleteReplyFromDatabase(replyId) {
+  try {
+    const deletedComment = await Reply.destroy({
+      where: {
+        id: replyId
+      }
+    });
+
+    if (deletedComment === 0) {
+      console.log(`Comment with ID ${replyId} not found.`);
+      return `Comment with ID ${replyId} not found.`;
+    }
+
+    console.log(`Comment with ID ${replyId} deleted from the database.`);
+    return deletedComment;
+  } catch (error) {
+    console.error(`Failed to delete comment: ${error}`);
+  }
+}
+
