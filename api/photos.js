@@ -303,7 +303,7 @@ router.delete("/:photoId/unlike", async (req, res, next) => {
  * Camera_Details in make and model,
  * Tag in tag_name
  */
-router.post("/search", async (req, res) => {
+router.post("/search", async (req, res, next) => {
   let { query } = req.body;
   query = query.toLowerCase();
 
@@ -390,7 +390,7 @@ router.post("/search", async (req, res) => {
   }
 });
 
-router.post("/restrictedSearch", async (req, res) => {
+router.post("/restrictedSearch", async (req, res, next) => {
   let { query } = req.body;
   const {
     title,
