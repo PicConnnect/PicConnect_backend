@@ -1,5 +1,5 @@
 const express = require("express");
-// const Redis = require("ioredis");
+const fetchFromCache = require('./cacheHelper')
 const fs = require("fs");
 const exiftool = require("exiftool-vendored").exiftool;
 const multer = require("multer");
@@ -14,68 +14,40 @@ const {
 } = require("../db/models");
 const { Op, json } = require("sequelize");
 
-//const { Sequelize } = require("sequelize");
+const { Sequelize } = require("sequelize");
 //create new redis instance
 // const redis = new Redis(process.env.REDIS_URL);
 
-//Root here is localhost:8000/api/photos
-//getting all photos
-// router.get("/", async (req, res, next) => {
-//     try {
-//         let allPhotos = null;
-//         const startTimeRedis = process.hrtime(); // Get the start time
-//         const cachedPosts = await redis.get("allPhotos");
-//         if(cachedPosts){
-//             allPhotos = JSON.parse(cachedPosts);
-//             const endTimeRedis = process.hrtime(startTimeRedis); // Get the end time for Redis retrieval
-//             const loadingTimeRedis = endTimeRedis[0] * 1000 + endTimeRedis[1] / 1e6; // Calculate the Redis loading time in milliseconds
-//             console.log("Redis Loading time:", loadingTimeRedis, "ms");
-//         }else{
-//             const startTimeDB = process.hrtime();
-//             allPhotos = await Photo.findAll({
-//                 //if you want to randomize the data, - also uncomment sequelize too
-//                 //order: [[Sequelize.literal('RAND()')]],
-//                 limit: 30,
-//                 //all the includes
-//                 include: { all: true, nested: true },
-//             });
-//             const endTimeDB = process.hrtime(startTimeDB); // Get the end time for direct database retrieval
-//             const loadingTimeDB = endTimeDB[0] * 1000 + endTimeDB[1] / 1e6; // Calculate the database loading time in milliseconds
-//             console.log("Database Loading time:", loadingTimeDB, "ms");
-//             if(allPhotos){
-//                 await redis.set("allPhotos", JSON.stringify(allPhotos));
-//             }
-//         }
-//         allPhotos
-//             ? res.status(200).json(allPhotos)
-//             : res.status(404).send("Photos Not Found");
-//     } catch (error) {
-//         next(error);
-//     }
-// });
+//Root here is localhost:8000/api/photo
 router.get("/", async (req, res, next) => {
   try {
-    const allphotos = await Photo.findAll({
-      //if you want to randomize the data, - also uncomment sequelize too
-      //order: [[Sequelize.literal('RAND()')]],
-      limit: 30,
-      //all the includes
-      include: { all: true, nested: true },
+    const allPhotos = await fetchFromCache('allPhotos', () => {
+      return Photo.findAll({
+        //if you want to randomize the data, - also uncomment sequelize too
+        //order: [[Sequelize.literal('RAND()')]],
+        limit: 30,
+        //all the includes
+        include: { all: true, nested: true },
+      });
     });
-    allphotos
-      ? res.status(200).json(allphotos)
+
+    allPhotos
+      ? res.status(200).json(allPhotos)
       : res.status(404).send("Photos Not Found");
   } catch (error) {
     next(error);
   }
 });
 
+
 router.get("/:id", async (req, res, next) => {
   const photoId = req.params.id;
   try {
-    const singlePhoto = await Photo.findByPk(photoId, {
-      //all the includes
-      include: { all: true, nested: true },
+    const singlePhoto = await fetchFromCache(`photo:${photoId}`, () => {
+      return Photo.findByPk(photoId, {
+        //all the includes
+        include: { all: true, nested: true },
+      });
     });
     singlePhoto
       ? res.status(200).json(singlePhoto)
@@ -85,15 +57,20 @@ router.get("/:id", async (req, res, next) => {
   }
 });
 
+
 router.get("/user/:id", async (req, res, next) => {
   const { id } = req.params;
   try {
-    const photos = await Photo.findAll({ where: { userId: id } });
+    const photos = await fetchFromCache(`user:${id}:photos`, () => {
+      return Photo.findAll({ where: { userId: id } });
+    });
     res.json(photos);
   } catch (error) {
     next(error);
   }
 });
+
+
 //add photo
 router.post("/addPhoto", async (req, res, next) => {
   try {
@@ -254,7 +231,7 @@ router.get("/tag/:tagId", async (req, res, next) => {
 // Like photo
 router.post("/:photoId/like", async (req, res, next) => {
   try {
-    const userId = req.body.userId; // let's assume you send userId in the request body
+    const userId = req.body.userId; 
     const photoId = req.params.photoId;
     console.log("Request body:", req.body);
     console.log(`Attempting to like photo ${photoId} for user ${userId}`);
