@@ -1,5 +1,5 @@
 const express = require("express");
-const fetchFromCache = require('./cacheHelper')
+const { fetchFromCache, invalidateCache }  = require('./cacheHelper')
 const fs = require("fs");
 const exiftool = require("exiftool-vendored").exiftool;
 const multer = require("multer");
@@ -15,6 +15,7 @@ const {
 const { Op, json } = require("sequelize");
 
 const { Sequelize } = require("sequelize");
+// const { default: Redis } = require("ioredis");
 //create new redis instance
 // const redis = new Redis(process.env.REDIS_URL);
 
@@ -123,6 +124,9 @@ router.post("/addPhoto", async (req, res, next) => {
       locationId,
       cameraDetailId,
     });
+
+    await invalidateCache("allPhotos", `user:${userId}:photos`);
+
     createPhoto
       ? res.status(200).json(createPhoto)
       : res.status(400).send("Can't add photo");
@@ -191,6 +195,9 @@ router.put("/:id", async (req, res, next) => {
     const updatedPhoto = await Photo.update(updatePhoto, {
       where: { id: photoId },
     });
+
+    await invalidateCache("allPhotos");
+
     updatedPhoto
       ? res.status(200).json(updatedPhoto)
       : res.status(400).send("Photo not found");
