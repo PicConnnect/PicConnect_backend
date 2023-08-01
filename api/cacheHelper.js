@@ -15,4 +15,14 @@ async function fetchFromCache(key, fetchFunction, expireTime = 3600) {
     }
 }
 
-module.exports = fetchFromCache;
+async function invalidateCache(...keys) {
+    try {
+      await Promise.all(keys.map(key => redis.del(key)));
+    } catch (err) {
+      console.error('Error invalidating cache:', err);
+      throw err;
+    }
+  }
+  
+
+module.exports = { fetchFromCache, invalidateCache };
