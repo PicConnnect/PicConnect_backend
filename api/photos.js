@@ -209,9 +209,22 @@ router.put("/:id", async (req, res, next) => {
 router.delete("/:id", async (req, res, next) => {
   const photoId = req.params.id;
   try {
+
+    const photo = await Photo.findByPk(photoId);
+
+    if (!photo) {
+      return res.status(400).send("Photo not found");
+    }
+
+    const userId = photo.userId; 
+
     const deletedPhoto = await Photo.destroy({
       where: { id: photoId },
     });
+
+    await invalidateCache("allPhotos");
+    await invalidateCache(`user:${userId}:photos`)
+    // await invalidateCache(`user:${userId}:likes`);
 
     deletedPhoto
       ? res.status(200).send("Photo deleted")
@@ -250,6 +263,7 @@ router.post("/:photoId/like", async (req, res, next) => {
     photo.likesCount += 1;
     await photo.save();
 
+    await invalidateCache(`user:${userId}:likes`)
     res.status(200).json(like);
   } catch (error) {
     //console.error(`Failed to like photo ${photoId} for user ${userId}`, error);
@@ -266,12 +280,17 @@ router.delete("/:photoId/unlike", async (req, res, next) => {
       `User with ID: ${userId} is unliking photo with ID: ${photoId}`
     );
     await Like.destroy({ where: { userId, photoId } });
-    res.status(200).send("Photo unliked");
 
     // Decrement the likesCount
     const photo = await Photo.findByPk(photoId);
     photo.likesCount -= 1;
     await photo.save();
+    
+    // await invalidateCache("allPhotos");
+    // await invalidateCache(`user:${userId}:photos`);
+    await invalidateCache(`user:${userId}:likes`);
+
+    res.status(200).send("Photo unliked")
     
   } catch (error) {
     next(error);
