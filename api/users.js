@@ -1,4 +1,5 @@
 const express = require ("express");
+const { fetchFromCache } = require('./cacheHelper')
 const router = express.Router();
 const { User, Like, Photo } = require("../db/models");
 const { Op } = require("sequelize");
@@ -145,21 +146,20 @@ router.delete("/:id/deleteFollower/:followerID", async (req, res, next) => {
         next (error);
     }
 });
+
+
 router.get('/:userId/likes', async (req, res) => {
     try {
       const userId = req.params.userId;
   
-      // Get likes associated with user
-      const userLikes = await Like.findAll({
-        where: { userId: userId }
-      });
-  
-      // Map the userLikes to get array of photoId
-      const photoIds = userLikes.map(like => like.photoId);
-  
-      // Get all photos with id from photoIds
-      const photos = await Photo.findAll({
-        where: { id: photoIds }
+      const photos = await fetchFromCache(`user:${userId}:likes`, async () => {
+        const userLikes = await Like.findAll({
+          where: { userId: userId }
+        });
+        const photoIds = userLikes.map(like => like.photoId);
+        return Photo.findAll({
+          where: { id: photoIds }
+        });
       });
   
       res.json(photos);
@@ -168,6 +168,7 @@ router.get('/:userId/likes', async (req, res) => {
       res.status(500).send('Error retrieving user likes');
     }
 });
+
 
 /**
  * This search method will give out the list of users when requested with the prompt
