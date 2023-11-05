@@ -1,5 +1,5 @@
 const express = require ("express");
-const { fetchFromCache } = require('./cacheHelper')
+const { fetchFromCache, invalidateCache } = require('./cacheHelper')
 const router = express.Router();
 const { User, Like, Photo } = require("../db/models");
 const { Op } = require("sequelize");
@@ -35,6 +35,9 @@ router.put('/profile-picture', async (req, res) => {
         user.profilePicUrl = profilePicUrl;
         //console.log(user);
         await user.save();
+
+        //Invalidate cache
+        await invalidateCache(`user:${userId}`);
         return res.status(200).json(user);
     } catch (err) {
         console.error("Server error: ", err);
@@ -48,7 +51,7 @@ router.put("/:id", async (req, res, next) => {
     const updateUser = req.body;
     try {
         await User.update(updateUser, {
-            where:{id: id}, 
+            where:{id: id},
         });
         const updatedUser = await User.findByPk(id);
         updatedUser
@@ -110,7 +113,7 @@ router.get("/Followers/:id", async (req, res, next) => {
 
 //handling add follower to the user post request
 router.post("/:id/addFollower/:followerID", async (req, res, next) => {
-    
+
     const { id, followerID } = req.params;
     //console.log(id, followerID);
     try {
@@ -140,7 +143,7 @@ router.delete("/:id/deleteFollower/:followerID", async (req, res, next) => {
         const deleteFollower = await user.removeFollower_id(follower);
         deleteFollower
             ? res.status(200).send("Follower deleted")
-            : res.status(400).send("Follower not deleted"); 
+            : res.status(400).send("Follower not deleted");
 
     } catch (error) {
         next (error);
@@ -151,7 +154,7 @@ router.delete("/:id/deleteFollower/:followerID", async (req, res, next) => {
 router.get('/:userId/likes', async (req, res) => {
     try {
       const userId = req.params.userId;
-  
+
       const photos = await fetchFromCache(`user:${userId}:likes`, async () => {
         const userLikes = await Like.findAll({
           where: { userId: userId }
@@ -161,7 +164,7 @@ router.get('/:userId/likes', async (req, res) => {
           where: { id: photoIds }
         });
       });
-  
+
       res.json(photos);
     } catch (error) {
       console.error(error);
@@ -172,7 +175,7 @@ router.get('/:userId/likes', async (req, res) => {
 
 /**
  * This search method will give out the list of users when requested with the prompt
- * 
+ *
  */
 router.post('/search', async (req, res, next) => {
     const { query } = req.body;
