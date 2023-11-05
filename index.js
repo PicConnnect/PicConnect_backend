@@ -27,9 +27,19 @@ const setupRoutes = (app) => {
   });
 };
 
+// Configure the application (middleware, routes)
+const configureApp = () => {
+  const app = express();
+  setupMiddleWare(app);
+  setupRoutes(app);
+  return app;
+};
+
 //start server, sync db, and setup socket.io
-const startServer = async (app, server, port) => {
+const startServer = async (app, port) => {
   await db.sync();
+  const server = http.createServer(app);
+
   //socekt.io setup with cors
   const io = require("socket.io")(server, {
     cors: {
@@ -42,7 +52,7 @@ const startServer = async (app, server, port) => {
   //event handlers
   io.on("connection", (socket) => {
     console.log("A user connected");
-    
+
     socket.on("joinRoom", async (roomId) => {
       console.log(`Joined room: ${roomId}`);
       socket.join(roomId);
@@ -96,25 +106,25 @@ const startServer = async (app, server, port) => {
       console.log("Client disconnected");
     });
   });
-  server.listen(port, () => {
-    console.log(`Server is running on port ${PORT}`);
-  });
+
+  if (process.env.NODE_ENV !== 'production') {
+    server.listen(port, () => {
+      console.log(`Server is running on port ${port}`);
+    });
+  }
+
   return server;
 };
-const configureApp = (port) => {
-  const app = express();
-  setupMiddleWare(app);
-  setupRoutes(app);
-  // app.listen(PORT, () => {
-  //     console.log(`Listening to port ${PORT}`)
 
-  // })
-  const server = http.createServer(app);
-  return startServer(app, server, port);
+// Main entry point to start the application
+const runApp = async () => {
+  const app = configureApp();
+  await startServer(app, PORT);
 };
 
-module.exports = configureApp(PORT);
+runApp();
 
+// module.exports = configureApp(PORT);
 
 async function getCommentsFromDatabase(photoId) {
   try {
@@ -216,4 +226,3 @@ async function deleteReplyFromDatabase(replyId) {
     console.error(`Failed to delete comment: ${error}`);
   }
 }
-
