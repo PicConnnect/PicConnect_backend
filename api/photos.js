@@ -2,7 +2,9 @@ const express = require("express");
 const { fetchFromCache, invalidateCache }  = require('./cacheHelper')
 const fs = require("fs");
 const exiftool = require("exiftool-vendored").exiftool;
-const multer = require("multer");
+const multer = require('multer');
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
 const router = express.Router();
 const {
   Photo,
@@ -72,6 +74,8 @@ router.get("/user/:id", async (req, res, next) => {
 });
 
 
+
+
 //add photo
 router.post("/addPhoto", async (req, res, next) => {
   try {
@@ -135,9 +139,37 @@ router.post("/addPhoto", async (req, res, next) => {
   }
 });
 
+
+// router.post("/extract-metadata", upload.single("photo"), async (req, res) => {
+//   try {
+//     if (!req.file) {
+//       return res.status(400).json({ error: "No file uploaded" });
+//     }
+
+//     // Get the buffer of the uploaded photo
+//     const fileBuffer = req.file.buffer;
+
+//     // Specify the tags you want to extract from the metadata
+//     // ... (rest of your code)
+
+//     // Extract metadata using exiftool with the file buffer
+//     const metadata = await exiftool.read(fileBuffer);
+//     // ... (rest of your code)
+
+    // No need to delete the uploaded image from the upload folder
+    // since it's stored in memory and will be automatically cleared
+    // after the request is processed.
+
+//   } catch (err) {
+//     console.error("Error extracting metadata:", err);
+//     res.status(500).json({ error: "Error extracting metadata" });
+//   }
+// });
+
+
 // Set up multer for handling file uploads
 //multer options
-const upload = multer({ dest: "upload" });
+// const upload = multer({ dest: "upload" });
 router.post("/extract-metadata", upload.single("photo"), async (req, res) => {
   try {
     if (!req.file) {
@@ -145,7 +177,8 @@ router.post("/extract-metadata", upload.single("photo"), async (req, res) => {
     }
 
     // Get the path of the uploaded photo
-    const filePath = req.file.path;
+    // const filePath = req.file.path;
+    const fileBuffer = req.file.buffer;
 
     // Specify the tags you want to extract from the metadata
     const tagsToExtract = [
@@ -164,7 +197,8 @@ router.post("/extract-metadata", upload.single("photo"), async (req, res) => {
     // Create an object to hold the extracted tags and their values
     const extractedTags = {};
     // Extract metadata using exiftool
-    const metadata = await exiftool.read(filePath);
+    // const metadata = await exiftool.read(filePath);
+    const metadata = await exiftool.read(fileBuffer);
     if (metadata) {
       tagsToExtract.forEach((tag) => {
         if (tag in metadata) {
@@ -175,18 +209,13 @@ router.post("/extract-metadata", upload.single("photo"), async (req, res) => {
       // Return the metadata as the response
       res.json(extractedTags);
     }
-    // Delete the uploaded image from upload folder after sending the response
-    fs.unlink(filePath, (err) => {
-      if (err) {
-        console.error("Error deleting the file:", err);
-      }
-      console.log("File deleted successfully");
-    });
-  } catch (err) {
-    console.error("Error extracting metadata:", err);
-    res.status(500).json({ error: "Error extracting metadata" });
+
+    } catch (err) {
+      console.error("Error extracting metadata:", err);
+      res.status(500).json({ error: "Error extracting metadata" });
   }
 });
+
 //update photo
 router.put("/:id", async (req, res, next) => {
   const photoId = req.params.id;
@@ -216,7 +245,7 @@ router.delete("/:id", async (req, res, next) => {
       return res.status(400).send("Photo not found");
     }
 
-    const userId = photo.userId; 
+    const userId = photo.userId;
 
     const deletedPhoto = await Photo.destroy({
       where: { id: photoId },
@@ -251,7 +280,7 @@ router.get("/tag/:tagId", async (req, res, next) => {
 // Like photo
 router.post("/:photoId/like", async (req, res, next) => {
   try {
-    const userId = req.body.userId; 
+    const userId = req.body.userId;
     const photoId = req.params.photoId;
     console.log("Request body:", req.body);
     console.log(`Attempting to like photo ${photoId} for user ${userId}`);
@@ -285,13 +314,13 @@ router.delete("/:photoId/unlike", async (req, res, next) => {
     const photo = await Photo.findByPk(photoId);
     photo.likesCount -= 1;
     await photo.save();
-    
+
     // await invalidateCache("allPhotos");
     // await invalidateCache(`user:${userId}:photos`);
     await invalidateCache(`user:${userId}:likes`);
 
     res.status(200).send("Photo unliked")
-    
+
   } catch (error) {
     next(error);
   }
@@ -556,7 +585,7 @@ router.post('/advancedSearch', async (req, res, next) => {
         searchResult
             ? res.status(200).json(searchResult)
             : res.status(400).send("No Photo found");
-    } 
+    }
     catch(error){
         next(error)
     }
