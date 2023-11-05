@@ -227,14 +227,5 @@ async function deleteReplyFromDatabase(replyId) {
   }
 }
 
-module.exports = {
-  runApp,
-  configureApp,
-  startServer,
-  getCommentsFromDatabase,
-  saveCommentToDatabase,
-  saveReplyToDatabase,
-  deleteCommentFromDatabase,
-  deleteReplyFromDatabase
-};
+module.exports = (port) => configureApp(port);
 
