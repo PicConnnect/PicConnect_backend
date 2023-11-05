@@ -226,3 +226,15 @@ async function deleteReplyFromDatabase(replyId) {
     console.error(`Failed to delete comment: ${error}`);
   }
 }
+
+module.exports = {
+  runApp,
+  configureApp,
+  startServer,
+  getCommentsFromDatabase,
+  saveCommentToDatabase,
+  saveReplyToDatabase,
+  deleteCommentFromDatabase,
+  deleteReplyFromDatabase
+};
+
