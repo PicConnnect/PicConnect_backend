@@ -42,7 +42,7 @@ const startServer = async (app, server, port) => {
   //event handlers
   io.on("connection", (socket) => {
     console.log("A user connected");
-    
+
     socket.on("joinRoom", async (roomId) => {
       console.log(`Joined room: ${roomId}`);
       socket.join(roomId);
@@ -96,11 +96,13 @@ const startServer = async (app, server, port) => {
       console.log("Client disconnected");
     });
   });
-  server.listen(port, () => {
-    console.log(`Server is running on port ${PORT}`);
-  });
+  if (process.env.NODE_ENV !== 'production') {
+    server.listen(port, () => {
+      console.log(`Server is running on port ${port}`);
+    });
+  }
   return server;
-};
+
 const configureApp = (port) => {
   const app = express();
   setupMiddleWare(app);
@@ -216,4 +218,3 @@ async function deleteReplyFromDatabase(replyId) {
     console.error(`Failed to delete comment: ${error}`);
   }
 }
-
