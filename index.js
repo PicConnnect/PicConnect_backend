@@ -96,6 +96,7 @@ const startServer = async (app, server, port) => {
       console.log("Client disconnected");
     });
   });
+}
 
 //   server.listen(port, () => {
 //     console.log(`Server is running on port ${PORT}`);
