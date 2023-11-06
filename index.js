@@ -10,7 +10,7 @@ const PORT = process.env.PORT || 8000;
 const setupMiddleWare = (app) => {
   app.use(
     cors({
-      origin: [process.env.FRONTEND_URL], //app url
+      origin: 'https://pics-connect.vercel.app', //app url
       credentials: true,
     })
   );
