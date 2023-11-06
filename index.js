@@ -42,7 +42,7 @@ const startServer = async (app, server, port) => {
   //event handlers
   io.on("connection", (socket) => {
     console.log("A user connected");
-    
+
     socket.on("joinRoom", async (roomId) => {
       console.log(`Joined room: ${roomId}`);
       socket.join(roomId);
@@ -96,25 +96,37 @@ const startServer = async (app, server, port) => {
       console.log("Client disconnected");
     });
   });
-  server.listen(port, () => {
-    console.log(`Server is running on port ${PORT}`);
-  });
-  return server;
-};
-const configureApp = (port) => {
-  const app = express();
-  setupMiddleWare(app);
-  setupRoutes(app);
+}
+
+//   server.listen(port, () => {
+//     console.log(`Server is running on port ${PORT}`);
+//   });
+//   return server;
+// };
+
+
+// const configureApp = () => {
+//   const app = express();
+//   setupMiddleWare(app);
+//   setupRoutes(app);
   // app.listen(PORT, () => {
   //     console.log(`Listening to port ${PORT}`)
 
   // })
-  const server = http.createServer(app);
-  return startServer(app, server, port);
+//   const server = http.createServer(app);
+//   return startServer(app, server, port);
+// };
+
+// module.exports = configureApp(PORT);
+
+const configureApp = () => {
+  const app = express();
+  setupMiddleWare(app);
+  setupRoutes(app);
+  return app;
 };
 
-module.exports = configureApp(PORT);
-
+module.exports = configureApp();
 
 async function getCommentsFromDatabase(photoId) {
   try {
@@ -216,4 +228,3 @@ async function deleteReplyFromDatabase(replyId) {
     console.error(`Failed to delete comment: ${error}`);
   }
 }
-
